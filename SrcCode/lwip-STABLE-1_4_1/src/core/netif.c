@@ -186,8 +186,11 @@ netif_add(struct netif *netif, ip_addr_t *ipaddr, ip_addr_t *netmask,
   }
 
   /* add this netif to the list */
-  netif->next = netif_list;
-  netif_list = netif;
+  if(netif != netif_list) //防止协议栈重复初始化 网卡列表自己指向自己
+  {
+	  netif->next = netif_list;
+	  netif_list = netif;
+  }
   snmp_inc_iflist();
 
 #if LWIP_IGMP

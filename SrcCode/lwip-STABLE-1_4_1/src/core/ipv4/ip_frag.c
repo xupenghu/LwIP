@@ -707,42 +707,42 @@ ip_frag(struct pbuf *p, struct netif *netif, ip_addr_t *dest)
    * use to reference the packet (without link header).
    * Layer and length is irrelevant.
    */
-  rambuf = pbuf_alloc(PBUF_LINK, 0, PBUF_REF);
+  rambuf = pbuf_alloc(PBUF_LINK, 0, PBUF_REF); //PBUF_REF 描述的内存在ram中 但是与pbuf结构无关
   if (rambuf == NULL) {
     LWIP_DEBUGF(IP_REASS_DEBUG, ("ip_frag: pbuf_alloc(PBUF_LINK, 0, PBUF_REF) failed\n"));
     return ERR_MEM;
   }
-  rambuf->tot_len = rambuf->len = mtu;
-  rambuf->payload = LWIP_MEM_ALIGN((void *)buf);
+  rambuf->tot_len = rambuf->len = mtu;		// 设置pbuf的len和tot_len字段为接口的mtu值
+  rambuf->payload = LWIP_MEM_ALIGN((void *)buf);	//payload指向全局数据区
 
   /* Copy the IP header in it */
-  iphdr = (struct ip_hdr *)rambuf->payload;
-  SMEMCPY(iphdr, p->payload, IP_HLEN);
+  iphdr = (struct ip_hdr *)rambuf->payload;	//将ip数据报头设置到全局数据区首部
+  SMEMCPY(iphdr, p->payload, IP_HLEN);	//把原始数据报首部拷贝到分片首部
 #else /* IP_FRAG_USES_STATIC_BUF */
   original_iphdr = (struct ip_hdr *)p->payload;
   iphdr = original_iphdr;
 #endif /* IP_FRAG_USES_STATIC_BUF */
 
   /* Save original offset */
-  tmp = ntohs(IPH_OFFSET(iphdr));
-  ofo = tmp & IP_OFFMASK;
-  omf = tmp & IP_MF;
+  tmp = ntohs(IPH_OFFSET(iphdr));	//暂存分片相关字段
+  ofo = tmp & IP_OFFMASK;				//得到分片偏移量 对原始数据报文应该是0
+  omf = tmp & IP_MF;						//得到更多分片标志
 
-  left = p->tot_len - IP_HLEN;
+  left = p->tot_len - IP_HLEN;		// 待发送数据长度（总长度-IP数据报首部长度）
 
-  nfb = (mtu - IP_HLEN) / 8;
+  nfb = (mtu - IP_HLEN) / 8;			// 一个分片中可以存放的最大数据量（8字节为单位）
 
   while (left) {
-    last = (left <= mtu - IP_HLEN);
+    last = (left <= mtu - IP_HLEN); //如果待发送数据长度小于分片最大长度 last = 1 否则 last = 0
 
     /* Set new offset and MF flag */
-    tmp = omf | (IP_OFFMASK & (ofo));
-    if (!last) {
-      tmp = tmp | IP_MF;
+    tmp = omf | (IP_OFFMASK & (ofo));	 //计算分片相关字段
+    if (!last) {											//如果不是最后一个分片
+      tmp = tmp | IP_MF;						    //则更多分片置1
     }
 
     /* Fill this fragment */
-    cop = last ? left : nfb * 8;
+    cop = last ? left : nfb * 8;		
 
 #if IP_FRAG_USES_STATIC_BUF
     poff += pbuf_copy_partial(p, (u8_t*)iphdr + IP_HLEN, cop, poff);

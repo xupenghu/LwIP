@@ -679,7 +679,7 @@ etharp_ip_input(struct netif *netif, struct pbuf *p)
  * @param netif The lwIP network interface on which the ARP packet pbuf arrived.
  * @param ethaddr Ethernet address of netif.
  * @param p The ARP packet that arrived on netif. Is freed by this function.
- *
+ * 函数功能：处理ARP数据包 
  * @return NULL
  *
  * @see pbuf_free()
@@ -687,11 +687,11 @@ etharp_ip_input(struct netif *netif, struct pbuf *p)
 static void
 etharp_arp_input(struct netif *netif, struct eth_addr *ethaddr, struct pbuf *p)
 {
-  struct etharp_hdr *hdr;
-  struct eth_hdr *ethhdr;
+  struct etharp_hdr *hdr;	//指向ARP数据包头部的变量
+  struct eth_hdr *ethhdr;	//指向以太网帧头部的变量
   /* these are aligned properly, whereas the ARP header fields might not be */
   ip_addr_t sipaddr, dipaddr;
-  u8_t for_us;
+  u8_t for_us;		//用于指向该IP包是否是发给本机的
 #if LWIP_AUTOIP
   const u8_t * ethdst_hwaddr;
 #endif /* LWIP_AUTOIP */

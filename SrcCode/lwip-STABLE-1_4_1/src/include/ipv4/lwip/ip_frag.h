@@ -50,14 +50,15 @@ extern "C" {
 
 /* IP reassembly helper struct.
  * This is exported because memp needs to know the size.
+ * 数据包重装结构体
  */
 struct ip_reassdata {
-  struct ip_reassdata *next;
-  struct pbuf *p;
-  struct ip_hdr iphdr;
-  u16_t datagram_len;
-  u8_t flags;
-  u8_t timer;
+  struct ip_reassdata *next;    //指向下一个重装结构体 用于构造单链表
+  struct pbuf *p;                     //该数据报的数据列表
+  struct ip_hdr iphdr;              //该数据报的头部信息
+  u16_t datagram_len;           //已经收到的数据报的长度
+  u8_t flags;                          //是否收到最后一个分片
+  u8_t timer;                          //设置超时间隔
 };
 
 void ip_reass_init(void);
