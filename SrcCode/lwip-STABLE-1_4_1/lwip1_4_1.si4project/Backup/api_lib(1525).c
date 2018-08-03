@@ -57,7 +57,7 @@
 /**
  * Create a new netconn (of a specific type) that has a callback function.
  * The corresponding pcb is also created.
- * 新建一个连接 其申请了一个netconn结构 并没有做实质性的工作
+ *
  * @param t the type of 'connection' to create (@see enum netconn_type)
  * @param proto the IP protocol for RAW IP pcbs
  * @param callback a function to call on status changes (RX available, TX'ed)
@@ -70,12 +70,12 @@ netconn_new_with_proto_and_callback(enum netconn_type t, u8_t proto, netconn_cal
   struct netconn *conn;
   struct api_msg msg;
 
-  conn = netconn_alloc(t, callback);	//新建并初始化一个Netcom结构
-  if (conn != NULL) {	//如果创建成功
-    msg.function = do_newconn;	//函数会向内核发送一个API消息 请求内核执行do_newconn函数
+  conn = netconn_alloc(t, callback);
+  if (conn != NULL) {
+    msg.function = do_newconn;
     msg.msg.msg.n.proto = proto;
     msg.msg.conn = conn;
-    if (TCPIP_APIMSG(&msg) != ERR_OK) { //像内核发送一个api消息 自身阻塞在此等候 内核的do_newconn函数会调用tcp_new 或udp_new来初始化相应的控制块并挂接到netconn的pcb字段
+    if (TCPIP_APIMSG(&msg) != ERR_OK) {
       LWIP_ASSERT("freeing conn without freeing pcb", conn->pcb.tcp == NULL);
       LWIP_ASSERT("conn has no op_completed", sys_sem_valid(&conn->op_completed));
       LWIP_ASSERT("conn has no recvmbox", sys_mbox_valid(&conn->recvmbox));
@@ -95,7 +95,7 @@ netconn_new_with_proto_and_callback(enum netconn_type t, u8_t proto, netconn_cal
  * Close a netconn 'connection' and free its resources.
  * UDP and RAW connection are completely closed, TCP pcbs might still be in a waitstate
  * after this returns.
- * 删除一个链接结构Netcom 
+ *
  * @param conn the netconn to delete
  * @return ERR_OK if the connection was deleted
  */
@@ -105,15 +105,15 @@ netconn_delete(struct netconn *conn)
   struct api_msg msg;
 
   /* No ASSERT here because possible to get a (conn == NULL) if we got an accept error */
-  if (conn == NULL) { //如果要删除的Netconn为空 直接返回
+  if (conn == NULL) {
     return ERR_OK;
   }
 
-  msg.function = do_delconn;	//像内核发送api消息时请求内核执行的回调函数
+  msg.function = do_delconn;
   msg.msg.conn = conn;
-  tcpip_apimsg(&msg);		//向内核发送一条api消息
-	
-  netconn_free(conn);	//释放内存
+  tcpip_apimsg(&msg);
+
+  netconn_free(conn);
 
   /* don't care for return value of do_delconn since it only calls void functions */
 
@@ -123,7 +123,7 @@ netconn_delete(struct netconn *conn)
 /**
  * Get the local or remote IP address and port of a netconn.
  * For RAW netconns, this returns the protocol instead of a port!
- * 获取一个链接结构中的源IP地址和端口号或者目的IP地址和目的端口号
+ *
  * @param conn the netconn to query
  * @param addr a pointer to which to save the IP address
  * @param port a pointer to which to save the port (or protocol for RAW)
@@ -141,12 +141,12 @@ netconn_getaddr(struct netconn *conn, ip_addr_t *addr, u16_t *port, u8_t local)
   LWIP_ERROR("netconn_getaddr: invalid addr", (addr != NULL), return ERR_ARG;);
   LWIP_ERROR("netconn_getaddr: invalid port", (port != NULL), return ERR_ARG;);
 
-  msg.function = do_getaddr;	//希望内核执行的函数
+  msg.function = do_getaddr;
   msg.msg.conn = conn;
   msg.msg.msg.ad.ipaddr = addr;
   msg.msg.msg.ad.port = port;
   msg.msg.msg.ad.local = local;
-  err = TCPIP_APIMSG(&msg);	//向内核发送api消息
+  err = TCPIP_APIMSG(&msg);
 
   NETCONN_SET_SAFE_ERR(conn, err);
   return err;
@@ -155,7 +155,7 @@ netconn_getaddr(struct netconn *conn, ip_addr_t *addr, u16_t *port, u8_t local)
 /**
  * Bind a netconn to a specific local IP address and port.
  * Binding one netconn twice might not always be checked correctly!
- * 将一个netconn结构与本地的IP地址和端口号进行绑定
+ *
  * @param conn the netconn to bind
  * @param addr the local IP address to bind the netconn to (use IP_ADDR_ANY
  *             to bind to all addresses)
@@ -583,14 +583,14 @@ netconn_send(struct netconn *conn, struct netbuf *buf)
 
 /**
  * Send data over a TCP netconn.
- * 用于在稳定的tcp链接上发送数据
+ *
  * @param conn the TCP netconn over which to send data
- * @param dataptr pointer to the application buffer that contains the data to send 待发送数据的其实地址
- * @param size size of the application data to send	待发送数据的长度
- * @param apiflags combination of following flags : 对待发送数据的处理类型
- * - NETCONN_COPY: data will be copied into memory belonging to the stack	告诉协议栈将待发送数据拷贝到内核空间进行发送，这样用户可以立即重新使用这段内存空间
- * - NETCONN_MORE: for TCP connection, PSH flag will be set on last segment sent 组装这些数据的tcp报文段最后一个报文段的PSH标志将被置位 这样数据在接收端会被尽快递交给上层
- * - NETCONN_DONTBLOCK: only write the data if all dat can be written at once 表示当发送发送缓冲满时，netconn_write不会被阻塞而是立即返回ERR_VAL
+ * @param dataptr pointer to the application buffer that contains the data to send
+ * @param size size of the application data to send
+ * @param apiflags combination of following flags :
+ * - NETCONN_COPY: data will be copied into memory belonging to the stack
+ * - NETCONN_MORE: for TCP connection, PSH flag will be set on last segment sent
+ * - NETCONN_DONTBLOCK: only write the data if all dat can be written at once
  * @param bytes_written pointer to a location that receives the number of written bytes
  * @return ERR_OK if data was sent, any other err_t on error
  */
@@ -615,7 +615,7 @@ netconn_write_partly(struct netconn *conn, const void *dataptr, size_t size,
   }
 
   /* non-blocking write sends as much  */
-  msg.function = do_write;	
+  msg.function = do_write;
   msg.msg.conn = conn;
   msg.msg.msg.w.dataptr = dataptr;
   msg.msg.msg.w.apiflags = apiflags;
@@ -681,7 +681,7 @@ netconn_close_shutdown(struct netconn *conn, u8_t how)
 
 /**
  * Close a TCP netconn (doesn't delete it).
- * 关闭一个tcp链接 该函数会引起构造一个FIN握手报文的发送成功发送后 函数会返回 其他的事情内核会处理
+ *
  * @param conn the TCP netconn to close
  * @return ERR_OK if the netconn was closed, any other err_t on error
  */

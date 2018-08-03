@@ -48,19 +48,18 @@
 /**
  * Create (allocate) and initialize a new netbuf.
  * The netbuf doesn't yet contain a packet buffer!
- * 申请一个新的net_buffer空间，注意 这里不会分配任何数据空间（不指向任何pbuf）
- * 真正的数据存储区需要通过调用函数netbuf_alloc来分配
+ *
  * @return a pointer to a new netbuf
  *         NULL on lack of memory
  */
 struct
 netbuf *netbuf_new(void)
 {
-  struct netbuf *buf = NULL;
+  struct netbuf *buf;
 
-  buf = (struct netbuf *)memp_malloc(MEMP_NETBUF);	//申请netbuf空间
-  if (buf != NULL) {	//如果申请成功
-    buf->p = NULL;	//初始化
+  buf = (struct netbuf *)memp_malloc(MEMP_NETBUF);
+  if (buf != NULL) {
+    buf->p = NULL;
     buf->ptr = NULL;
     ip_addr_set_any(&buf->addr);
     buf->port = 0;
@@ -74,14 +73,14 @@ netbuf *netbuf_new(void)
 #endif /* LWIP_NETBUF_RECVINFO */
 #endif /* LWIP_NETBUF_RECVINFO || LWIP_CHECKSUM_ON_COPY */
     return buf;
-  } else { //申请失败返回空
+  } else {
     return NULL;
   }
 }
 
 /**
  * Deallocate a netbuf allocated by netbuf_new().
- * 释放一个空间 如果函数调用时pbuf上还有数据 则连同pbuf一同释放
+ *
  * @param buf pointer to a netbuf allocated by netbuf_new()
  */
 void
@@ -89,16 +88,16 @@ netbuf_delete(struct netbuf *buf)
 {
   if (buf != NULL) {
     if (buf->p != NULL) {
-      pbuf_free(buf->p);	//释放pbuf
-      buf->p = buf->ptr = NULL;	//指针一定要赋值为空
+      pbuf_free(buf->p);
+      buf->p = buf->ptr = NULL;
     }
-    memp_free(MEMP_NETBUF, buf);	//释放netbuf
+    memp_free(MEMP_NETBUF, buf);
   }
 }
 
 /**
  * Allocate memory for a packet buffer for a given netbuf.
- * 为netbuf结构分配size大小的空间
+ *
  * @param buf the netbuf for which to allocate a packet buffer
  * @param size the size of the packet buffer to allocate
  * @return pointer to the allocated memory
@@ -110,39 +109,37 @@ netbuf_alloc(struct netbuf *buf, u16_t size)
   LWIP_ERROR("netbuf_alloc: invalid buf", (buf != NULL), return NULL;);
 
   /* Deallocate any previously allocated memory. */
-  if (buf->p != NULL) {	//如果函数掉用时 netbuf已经分配的空间
-    pbuf_free(buf->p);	//则相应的空间会被释放掉
+  if (buf->p != NULL) {
+    pbuf_free(buf->p);
   }
-  buf->p = pbuf_alloc(PBUF_TRANSPORT, size, PBUF_RAM);	//注意：该函数在传输层被调用 所以默认的各个协议的首部长度也会被附加到pbuf中
-  if (buf->p == NULL) {	//如果分配失败返回空
+  buf->p = pbuf_alloc(PBUF_TRANSPORT, size, PBUF_RAM);
+  if (buf->p == NULL) {
      return NULL;
   }
   LWIP_ASSERT("check that first pbuf can hold size",
              (buf->p->len >= size));
-  buf->ptr = buf->p;	//初始都指向第一个pbuf
-  return buf->p->payload;	//返回数据区的起始位置
+  buf->ptr = buf->p;
+  return buf->p->payload;
 }
 
 /**
  * Free the packet buffer included in a netbuf
- * 释放netbuf指向的数据区pbuf
+ *
  * @param buf pointer to the netbuf which contains the packet buffer to free
  */
 void
 netbuf_free(struct netbuf *buf)
 {
   LWIP_ERROR("netbuf_free: invalid buf", (buf != NULL), return;);
-  if (buf->p != NULL) {	//如果pbuf不为空
-    pbuf_free(buf->p);	//直接释放
+  if (buf->p != NULL) {
+    pbuf_free(buf->p);
   }
-  buf->p = buf->ptr = NULL; //如果为空 则再次强调赋值指针为空
+  buf->p = buf->ptr = NULL;
 }
 
 /**
  * Let a netbuf reference existing (non-volatile) data.
- * 该函数功能与netbuf_alloc的功能类似 区别在于它不会非陪具体的数据区域 
- * 只是分配一个pbuf首部结构（包含各个协议的首部空间），并将pbuf的payload指针指向
- * 数据区dataptr 这种描述数据包的方式在静态数据发送时经常用到
+ *
  * @param buf netbuf which should reference the data
  * @param dataptr pointer to the data to reference
  * @param size size of the data
@@ -153,23 +150,23 @@ err_t
 netbuf_ref(struct netbuf *buf, const void *dataptr, u16_t size)
 {
   LWIP_ERROR("netbuf_ref: invalid buf", (buf != NULL), return ERR_ARG;);
-  if (buf->p != NULL) {	//如果netbuf结构之前有数据
-    pbuf_free(buf->p);	//直接释放掉
+  if (buf->p != NULL) {
+    pbuf_free(buf->p);
   }
-  buf->p = pbuf_alloc(PBUF_TRANSPORT, 0, PBUF_REF);	//申请pbuf结构 数据区为0
-  if (buf->p == NULL) {	//如果申请失败
-    buf->ptr = NULL;	
-    return ERR_MEM;	//返回内存错误
+  buf->p = pbuf_alloc(PBUF_TRANSPORT, 0, PBUF_REF);
+  if (buf->p == NULL) {
+    buf->ptr = NULL;
+    return ERR_MEM;
   }
-  buf->p->payload = (void*)dataptr;	//数据区的首地址赋值为传进来要发送的数据的首地址
-  buf->p->len = buf->p->tot_len = size;	//数据长度等于传进来要发送的数据长度
+  buf->p->payload = (void*)dataptr;
+  buf->p->len = buf->p->tot_len = size;
   buf->ptr = buf->p;
   return ERR_OK;
 }
 
 /**
  * Chain one netbuf to another (@see pbuf_chain)
- * 数据链接函数 将tail中的pbuf链接到head的pbuf之后 同时释放tail
+ *
  * @param head the first netbuf
  * @param tail netbuf to chain after head, freed by this function, may not be reference after returning
  */
@@ -178,17 +175,14 @@ netbuf_chain(struct netbuf *head, struct netbuf *tail)
 {
   LWIP_ERROR("netbuf_ref: invalid head", (head != NULL), return;);
   LWIP_ERROR("netbuf_chain: invalid tail", (tail != NULL), return;);
-  pbuf_cat(head->p, tail->p);	//将tail的pbuf链接到head的pbuf之后
+  pbuf_cat(head->p, tail->p);
   head->ptr = head->p;
-  memp_free(MEMP_NETBUF, tail);	//释放tail
+  memp_free(MEMP_NETBUF, tail);
 }
 
 /**
  * Get the data pointer and length of the data inside a netbuf.
- * 将netbuf结构中ptr指向的pbuf数据其实地址填入dataptr中
- * 同时将该pbuf中的数据长度填入len中 netbuf记录的数据可能包含在多个pbuf中
- * 但是该函数只能返回ptr指针指向的pbuf数据信息 如果要对链表中的其他pbuf进行操作
- * 用户可以调用函数netbuf_next和netbuf_first来操作
+ *
  * @param buf netbuf to get the data from
  * @param dataptr pointer to a void pointer where to store the data pointer
  * @param len pointer to an u16_t where the length of the data is stored
@@ -202,11 +196,11 @@ netbuf_data(struct netbuf *buf, void **dataptr, u16_t *len)
   LWIP_ERROR("netbuf_data: invalid dataptr", (dataptr != NULL), return ERR_ARG;);
   LWIP_ERROR("netbuf_data: invalid len", (len != NULL), return ERR_ARG;);
 
-  if (buf->ptr == NULL) {	//如果为空 
-    return ERR_BUF;	//返回错误
+  if (buf->ptr == NULL) {
+    return ERR_BUF;
   }
-  *dataptr = buf->ptr->payload;	//取数据区的首地址
-  *len = buf->ptr->len;	//取数据长度
+  *dataptr = buf->ptr->payload;
+  *len = buf->ptr->len;
   return ERR_OK;
 }
 
@@ -214,7 +208,7 @@ netbuf_data(struct netbuf *buf, void **dataptr, u16_t *len)
  * Move the current data pointer of a packet buffer contained in a netbuf
  * to the next part.
  * The packet buffer itself is not modified.
- * 将ptr指向pbuf的下一个
+ *
  * @param buf the netbuf to modify
  * @return -1 if there is no next part
  *         1  if moved to the next part but now there is no next part
@@ -224,21 +218,21 @@ s8_t
 netbuf_next(struct netbuf *buf)
 {
   LWIP_ERROR("netbuf_free: invalid buf", (buf != NULL), return -1;);
-  if (buf->ptr->next == NULL) {	//如果next为空 返回-1
+  if (buf->ptr->next == NULL) {
     return -1;
   }
-  buf->ptr = buf->ptr->next;	//指向下一个
-  if (buf->ptr->next == NULL) {	//已经是最后一个了
-    return 1;	//返回1
+  buf->ptr = buf->ptr->next;
+  if (buf->ptr->next == NULL) {
+    return 1;
   }
-  return 0; //不是最后一个且已经指向了下一个 返回0
+  return 0;
 }
 
 /**
  * Move the current data pointer of a packet buffer contained in a netbuf
  * to the beginning of the packet.
  * The packet buffer itself is not modified.
- * 将netbuf中的ptr指向pbuf中的第一个pbuf结构
+ *
  * @param buf the netbuf to modify
  */
 void

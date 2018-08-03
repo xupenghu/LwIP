@@ -416,7 +416,7 @@ sys_restart_timeouts(void)
 /**
  * Wait (forever) for a message to arrive in an mbox.
  * While waiting, timeouts are processed.
- * 等待 直到在邮箱中收到消息 在等待过程中 定时事件被执行
+ *
  * @param mbox the mbox to fetch the message from
  * @param msg the place to store the message
  */
@@ -424,54 +424,52 @@ void
 sys_timeouts_mbox_fetch(sys_mbox_t *mbox, void **msg)
 {
   u32_t time_needed;
-  struct sys_timeo *tmptimeout;	//定时结构指针
-  sys_timeout_handler handler;	//定时事件函数指针
-  void *arg;	//定时事件函数参数
+  struct sys_timeo *tmptimeout;
+  sys_timeout_handler handler;
+  void *arg;
 
  again:
-  if (!next_timeout) {	//定时事件链表上的定时事件为空
-    time_needed = sys_arch_mbox_fetch(mbox, msg, 0);	//则邮箱一直被阻塞
-  } else {	//否则处理链表上的第一个定时事件
+  if (!next_timeout) {
+    time_needed = sys_arch_mbox_fetch(mbox, msg, 0);
+  } else {
     if (next_timeout->time > 0) {
-		/* 如果定时时间大于0 则以响应时长阻塞邮箱 并用time_needed记录等待的时间 */
-      time_needed = sys_arch_mbox_fetch(mbox, msg, next_timeout->time);	//阻塞等待next_timeout->time的时间
-    } else {	//如果定时时长为0，则将time_needed设置为SYS_ARCHTIMEOUT
-      time_needed = SYS_ARCH_TIMEOUT; //最后time_needed还是会被赋值为SYS_ARCH_TIMEOUT
+      time_needed = sys_arch_mbox_fetch(mbox, msg, next_timeout->time);
+    } else {
+      time_needed = SYS_ARCH_TIMEOUT;
     }
-	/* 等待了第一个事件需要的时长 但还未收到消息 则处理第一个定时事件 */
+
     if (time_needed == SYS_ARCH_TIMEOUT) {
       /* If time == SYS_ARCH_TIMEOUT, a timeout occured before a message
          could be fetched. We should now call the timeout handler and
          deallocate the memory allocated for the timeout. */
-      tmptimeout = next_timeout;	//获取第一个定时事件
-      next_timeout = tmptimeout->next;	//从定时链表上删除第一个定时事件
-      handler = tmptimeout->h;	//获取定时事件处理函数
-      arg = tmptimeout->arg;	//获取定时事件处理函数需要传入的参数
+      tmptimeout = next_timeout;
+      next_timeout = tmptimeout->next;
+      handler = tmptimeout->h;
+      arg = tmptimeout->arg;
 #if LWIP_DEBUG_TIMERNAMES
-      if (handler != NULL) {	
+      if (handler != NULL) {
         LWIP_DEBUGF(TIMERS_DEBUG, ("stmf calling h=%s arg=%p\n",
           tmptimeout->handler_name, arg));
       }
 #endif /* LWIP_DEBUG_TIMERNAMES */
       memp_free(MEMP_SYS_TIMEOUT, tmptimeout);
-      if (handler != NULL) {	//如果定时事件处理函数被定义
+      if (handler != NULL) {
         /* For LWIP_TCPIP_CORE_LOCKING, lock the core before calling the
            timeout handler function. */
         LOCK_TCPIP_CORE();
-        handler(arg);	//执行之
+        handler(arg);
         UNLOCK_TCPIP_CORE();
       }
       LWIP_TCPIP_THREAD_ALIVE();
 
       /* We try again to fetch a message from the mbox. */
-      goto again;	//返回again继续阻塞执行定时事件
-    } else { //调整等待时间后退出 让tcpip_thread处理接收到的消息
+      goto again;
+    } else {
       /* If time != SYS_ARCH_TIMEOUT, a message was received before the timeout
          occured. The time variable is set to the number of
          milliseconds we waited for the message. */
-      /* 如果在指定时间内成功获取了一条消息，time_needed记录了等待消息所消耗的时间*/
       if (time_needed < next_timeout->time) {
-        next_timeout->time -= time_needed;  //调整第一个事件的等待时间
+        next_timeout->time -= time_needed;
       } else {
         next_timeout->time = 0;
       }

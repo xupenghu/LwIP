@@ -64,14 +64,14 @@
 /* lwip_sock结构定义 用于描述一个socket的所有属性 */
 struct lwip_sock {
   /** sockets currently are built on netconns, each socket has one netconn */
-  struct netconn *conn;	//与socket对应的netconn结构 其上注册了event_callback函数
+  struct netconn *conn;	//与socket对应的netconn结构
   /** data that was left from the previous read */
   void *lastdata;	//上一次读取后未读完的数据（实际指向一个pbuf）
   /** offset in the data that was left from the previous read */
   u16_t lastoffset;	//未读完的数据在pbuf中的位置
   /** number of times data was received, set by event_callback(),
       tested by the receive and select functions */
-  s16_t rcvevent;	//该socket上数据接收事件次数 
+  s16_t rcvevent;	//该socket上数据接收事件次数
   /** number of times data was ACKed (free send buffer), set by event_callback(),
       tested by select */
   u16_t sendevent;		//该socket上数据发送次数
@@ -84,22 +84,21 @@ struct lwip_sock {
 };
 
 /** Description for a task waiting in select */
-/* 定义一个select函数所需要的所有信息 */
 struct lwip_select_cb {
   /** Pointer to the next waiting task */
-  struct lwip_select_cb *next;	//用于组织链表
+  struct lwip_select_cb *next;
   /** Pointer to the previous waiting task */
-  struct lwip_select_cb *prev;	//双向链表
+  struct lwip_select_cb *prev;
   /** readset passed to select */
-  fd_set *readset;	//select函数调用时传入的readset参数
+  fd_set *readset;
   /** writeset passed to select */
-  fd_set *writeset;	//select函数调用时，传入的writeset参数
+  fd_set *writeset;
   /** unimplemented: exceptset passed to select */
-  fd_set *exceptset; //select函数调用时，传入的exceptset参数
+  fd_set *exceptset;
   /** don't signal the same semaphore twice: set to 1 when signalled */
-  int sem_signalled;	//内核是否对该结构释放了信号量
+  int sem_signalled;
   /** semaphore to wake up a task waiting for select */
-  sys_sem_t sem;	//select将阻塞的信号量
+  sys_sem_t sem;
 };
 
 /** This struct is used to pass data to the set/getsockopt_internal
@@ -127,7 +126,6 @@ struct lwip_setgetsockopt_data {
 /** The global array of available sockets socket资源定义 */
 static struct lwip_sock sockets[NUM_SOCKETS];
 /** The global list of tasks waiting for select */
-/* 用于组织所有select的lwip_select_cb结构到链表上 */
 static struct lwip_select_cb *select_cb_list;
 /** This counter is increased from lwip_select when the list is chagned
     and checked in event_callback to see if it has changed. */
@@ -1125,14 +1123,6 @@ lwip_selscan(int maxfdp1, fd_set *readset_in, fd_set *writeset_in, fd_set *excep
 
 /**
  * Processing exceptset is not yet implemented.
- * 函数功能：监听一个或多个套接字的变化，该函数会阻塞，直到一个或多个套接字状态发生改变
- * maxfdp1 : 指明了将要监听的所有套接字的范围 通常取值为最大套接字值+1
- * readset ： 套接字的集合，通常保存当套接字上的数据可读时（内核收到了新的数据），系统就告诉
- *            select函数返回
- * writeset: 当套接字上的数据可写时（发送缓冲区可用），系统告诉select函数返回
- * exceptset: 当套接字上有异常或者紧急情况发生时，系统告诉select函数返回
- * timeout : select函数阻塞超时时间
- * 
  */
 int
 lwip_select(int maxfdp1, fd_set *readset, fd_set *writeset, fd_set *exceptset,

@@ -137,10 +137,7 @@ recv_raw(void *arg, struct raw_pcb *pcb, struct pbuf *p,
 /**
  * Receive callback function for UDP netconns.
  * Posts the packet to conn->recvmbox or deletes it on memory error.
- * udp回调函数
- * 当udp控制块收到一包数据时，默认的udp_tcp上的回调函数会被执行，
- * 当用户使用API时默认的回调函数会被注册为recv_udp
- * 该函数的主要功能是将递交上来的pbuf结构封装成一个netbuf结构
+ *
  * @see udp.h (struct udp_pcb.recv) for parameters
  */
 static void
@@ -157,7 +154,7 @@ recv_udp(void *arg, struct udp_pcb *pcb, struct pbuf *p,
   LWIP_UNUSED_ARG(pcb); /* only used for asserts... */
   LWIP_ASSERT("recv_udp must have a pcb argument", pcb != NULL);
   LWIP_ASSERT("recv_udp must have an argument", arg != NULL);
-  conn = (struct netconn *)arg;	//
+  conn = (struct netconn *)arg;
   LWIP_ASSERT("recv_udp: recv for wrong pcb!", conn->pcb.udp == pcb);
 
 #if LWIP_SO_RCVBUF
@@ -171,12 +168,12 @@ recv_udp(void *arg, struct udp_pcb *pcb, struct pbuf *p,
     return;
   }
 
-  buf = (struct netbuf *)memp_malloc(MEMP_NETBUF); //申请一个netbuf结构
-  if (buf == NULL) {	//申请失败直接返回
+  buf = (struct netbuf *)memp_malloc(MEMP_NETBUF);
+  if (buf == NULL) {
     pbuf_free(p);
     return;
   } else {
-    buf->p = p;	//填充netbuf结构
+    buf->p = p;
     buf->ptr = p;
     ip_addr_set(&buf->addr, addr);
     buf->port = port;
@@ -195,15 +192,15 @@ recv_udp(void *arg, struct udp_pcb *pcb, struct pbuf *p,
   }
 
   len = p->tot_len;
-  if (sys_mbox_trypost(&conn->recvmbox, buf) != ERR_OK) {	//把这个netbuf投递到netconn的recvbox中
-    netbuf_delete(buf);	//投递失败直接删除返回
+  if (sys_mbox_trypost(&conn->recvmbox, buf) != ERR_OK) {
+    netbuf_delete(buf);
     return;
   } else {
 #if LWIP_SO_RCVBUF
     SYS_ARCH_INC(conn->recv_avail, len);
 #endif /* LWIP_SO_RCVBUF */
     /* Register event with callback */
-    API_EVENT(conn, NETCONN_EVT_RCVPLUS, len); 
+    API_EVENT(conn, NETCONN_EVT_RCVPLUS, len);
   }
 }
 #endif /* LWIP_UDP */
@@ -428,10 +425,7 @@ setup_tcp(struct netconn *conn)
 /**
  * Accept callback function for TCP netconns.
  * Allocates a new netconn and posts that to conn->acceptmbox.
- * 当一个tcp连接完成三次握手后 tcp控制块上的accept函数将会被调用
- * 新连接的tcp控制块将作为参数传递给accept accept_function函数的功能是使用新连接的一个tcp控制块建立一个新连接结构netconn
- * 并将该结构投递到服务器连接的acceptmbox邮箱中 服务器应用程序通过调用netconn_accept可以从这个邮箱中取得一个新的连接结构
- * 然后对新连接进行操作，比如发送数据，接收数据等
+ *
  * @see tcp.h (struct tcp_pcb_listen.accept) for parameters and return value
  */
 static err_t
@@ -459,7 +453,7 @@ accept_function(void *arg, struct tcp_pcb *newpcb, err_t err)
      to the application thread */
   newconn->last_err = err;
 
-  if (sys_mbox_trypost(&conn->acceptmbox, newconn) != ERR_OK) {	//如果投递失败 释放之前的申请到的内存空间
+  if (sys_mbox_trypost(&conn->acceptmbox, newconn) != ERR_OK) {
     /* When returning != ERR_OK, the pcb is aborted in tcp_process(),
        so do nothing here! */
     /* remove all references to this netconn from the pcb */
@@ -478,7 +472,6 @@ accept_function(void *arg, struct tcp_pcb *newpcb, err_t err)
     return ERR_MEM;
   } else {
     /* Register event with callback */
-   /* 执行conn注册的回调函数 */
     API_EVENT(conn, NETCONN_EVT_RCVPLUS, 0);
   }
 
@@ -1445,7 +1438,7 @@ do_getaddr(struct api_msg_msg *msg)
   } else {
     msg->err = ERR_CONN;
   }
-  TCPIP_APIMSG_ACK(msg);  //释放信号量
+  TCPIP_APIMSG_ACK(msg);
 }
 
 /**

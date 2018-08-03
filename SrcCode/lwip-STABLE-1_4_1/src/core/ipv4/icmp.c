@@ -201,7 +201,7 @@ icmp_input(struct pbuf *p, struct netif *inp)
 #else /* CHECKSUM_GEN_ICMP */
     iecho->chksum = 0;
 #endif /* CHECKSUM_GEN_ICMP */
-
+    
     /* Set the correct TTL and recalculate the header checksum. */
     IPH_TTL_SET(iphdr, ICMP_TTL);
     IPH_CHKSUM_SET(iphdr, 0);

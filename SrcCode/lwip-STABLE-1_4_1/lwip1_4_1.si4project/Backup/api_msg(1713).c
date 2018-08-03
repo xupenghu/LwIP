@@ -1445,7 +1445,7 @@ do_getaddr(struct api_msg_msg *msg)
   } else {
     msg->err = ERR_CONN;
   }
-  TCPIP_APIMSG_ACK(msg);  //释放信号量
+  TCPIP_APIMSG_ACK(msg);
 }
 
 /**

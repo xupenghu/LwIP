@@ -62,14 +62,13 @@ extern "C" {
  *
  * @param arg Additional argument to pass to the function - set up by sys_timeout()
  */
- /* 定义函数指针类型*/
 typedef void (* sys_timeout_handler)(void *arg);
-/* 定义描述定时事件的数据结构 */
+
 struct sys_timeo {
-  struct sys_timeo *next;	//指向下一个定时事件
-  u32_t time;	//当前定时事件需要等待的时间
-  sys_timeout_handler h;	//指向定时函数 超时后改函数被系统回调执行
-  void *arg;		//传向定时函数的参数
+  struct sys_timeo *next;
+  u32_t time;
+  sys_timeout_handler h;
+  void *arg;
 #if LWIP_DEBUG_TIMERNAMES
   const char* handler_name;
 #endif /* LWIP_DEBUG_TIMERNAMES */

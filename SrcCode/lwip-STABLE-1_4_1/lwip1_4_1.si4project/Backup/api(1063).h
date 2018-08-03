@@ -80,28 +80,26 @@ extern "C" {
 #define NETCONNTYPE_DATAGRAM(t) (t&0xE0)
 
 /** Protocol family and type of the netconn */
-/* 描述链接类型 */
 enum netconn_type {
-  NETCONN_INVALID    = 0,	//无效类型
+  NETCONN_INVALID    = 0,
   /* NETCONN_TCP Group */
-  NETCONN_TCP        = 0x10,	//TCP
+  NETCONN_TCP        = 0x10,
   /* NETCONN_UDP Group */
-  NETCONN_UDP        = 0x20,	//UDP
-  NETCONN_UDPLITE    = 0x21,	//UDP_Lite
-  NETCONN_UDPNOCHKSUM= 0x22,	//无校验的udp
+  NETCONN_UDP        = 0x20,
+  NETCONN_UDPLITE    = 0x21,
+  NETCONN_UDPNOCHKSUM= 0x22,
   /* NETCONN_RAW Group */
-  NETCONN_RAW        = 0x40		//原始链接
+  NETCONN_RAW        = 0x40
 };
 
 /** Current state of the netconn. Non-TCP netconns are always
  * in state NETCONN_NONE! */
- /* 用于描述链接状态 主要在TCP链接中使用 */
 enum netconn_state {
-  NETCONN_NONE,		//不处于任何状态
-  NETCONN_WRITE,	//正在发送数据
-  NETCONN_LISTEN,	//侦听状态
-  NETCONN_CONNECT,	//链接状态
-  NETCONN_CLOSE		//关闭状态
+  NETCONN_NONE,
+  NETCONN_WRITE,
+  NETCONN_LISTEN,
+  NETCONN_CONNECT,
+  NETCONN_CLOSE
 };
 
 /** Use to inform the callback function about changes */
@@ -130,43 +128,41 @@ struct netconn;
 struct api_msg_msg;
 
 /** A callback prototype to inform about events for a netconn */
-/* 定义函数指针类型的回调函数 */
 typedef void (* netconn_callback)(struct netconn *, enum netconn_evt, u16_t len);
 
 /** A netconn descriptor */
-/* 链接结构netconn */
 struct netconn {
   /** type of the netconn (TCP, UDP or RAW) */
-  enum netconn_type type;	//连接类型
+  enum netconn_type type;
   /** current state of the netconn */
-  enum netconn_state state;	//连接状态
+  enum netconn_state state;
   /** the lwIP internal protocol control block */
-  union {	//内核与连接相关的控制块指针
-    struct ip_pcb  *ip;		//IP控制块
-    struct tcp_pcb *tcp;	//tcp控制块
-    struct udp_pcb *udp;	//udp控制块
-    struct raw_pcb *raw;	//原始控制块
+  union {
+    struct ip_pcb  *ip;
+    struct tcp_pcb *tcp;
+    struct udp_pcb *udp;
+    struct raw_pcb *raw;
   } pcb;
   /** the last error this netconn had */
-  err_t last_err;	//该连接上函数调用时设置的错误标志
+  err_t last_err;
   /** sem that is used to synchroneously execute functions in the core context */
-  sys_sem_t op_completed;	//信号量 用于两部分API同步
+  sys_sem_t op_completed;
   /** mbox where received packets are stored until they are fetched
       by the netconn application thread (can grow quite big) */
-  sys_mbox_t recvmbox;	//接收数据的邮箱 也可以看作是数据缓冲队列
+  sys_mbox_t recvmbox;
 #if LWIP_TCP
   /** mbox where new connections are stored until processed
       by the application thread */
-  sys_mbox_t acceptmbox;	//用户tcp服务端 连接请求的缓冲队列
+  sys_mbox_t acceptmbox;
 #endif /* LWIP_TCP */
   /** only used for socket layer */
 #if LWIP_SOCKET
-  int socket;	//socket描述符
+  int socket;
 #endif /* LWIP_SOCKET */
 #if LWIP_SO_SNDTIMEO
   /** timeout to wait for sending data (which means enqueueing data for sending
       in internal buffers) */
-  s32_t send_timeout;	//
+  s32_t send_timeout;
 #endif /* LWIP_SO_RCVTIMEO */
 #if LWIP_SO_RCVTIMEO
   /** timeout to wait for new data to be received
@@ -176,27 +172,25 @@ struct netconn {
 #if LWIP_SO_RCVBUF
   /** maximum amount of bytes queued in recvmbox
       not used for TCP: adjust TCP_WND instead! */
-  int recv_bufsize;	//数据邮箱recvbox上可缓冲的最大数据长度
+  int recv_bufsize;
   /** number of bytes currently in recvmbox to be received,
       tested against recv_bufsize to limit bytes on recvmbox
       for UDP and RAW, used for FIONREAD */
-  s16_t recv_avail;		//数据邮箱recvmbox中已经缓冲的数据长度
+  s16_t recv_avail;
 #endif /* LWIP_SO_RCVBUF */
   /** flags holding more netconn-internal state, see NETCONN_FLAG_* defines */
-/* netconn的更多状态标志 比如在发送缓冲不足 发送是否阻塞；是否自动更新内核接收窗口等 */
-  u8_t flags;		//
+  u8_t flags;
 #if LWIP_TCP
   /** TCP: when data passed to netconn_write doesn't fit into the send buffer,
       this temporarily stores how much is already sent. */
-  size_t write_offset;	//记录下一次发送索引
+  size_t write_offset;
   /** TCP: when data passed to netconn_write doesn't fit into the send buffer,
       this temporarily stores the message.
       Also used during connect and close. */
-/* 当调用netconn_write发送数据但是缓冲不足时，比如在发送缓冲不足时，数据会被暂时封装在write_msg中 等待下一次发送，*/
-  struct api_msg_msg *current_msg;	
+  struct api_msg_msg *current_msg;
 #endif /* LWIP_TCP */
   /** A callback function that is informed about events for this netconn */
-  netconn_callback callback;	//连接相关的回调函数 实现socket api时使用到
+  netconn_callback callback;
 };
 
 /** Register an Network connection event */

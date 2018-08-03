@@ -114,40 +114,40 @@ err_t            tcp_process_refused_data(struct tcp_pcb *pcb);
 #define TCP_HLEN 20
 
 #ifndef TCP_TMR_INTERVAL
-#define TCP_TMR_INTERVAL       250  /* The TCP timer interval in milliseconds. */
+#define TCP_TMR_INTERVAL       250  /* 250ms 宏定义The TCP timer interval in milliseconds. */
 #endif /* TCP_TMR_INTERVAL */
 
 #ifndef TCP_FAST_INTERVAL
-#define TCP_FAST_INTERVAL      TCP_TMR_INTERVAL /* the fine grained timeout in milliseconds */
+#define TCP_FAST_INTERVAL      TCP_TMR_INTERVAL /* 快速定时器ms the fine grained timeout in milliseconds */
 #endif /* TCP_FAST_INTERVAL */
 
 #ifndef TCP_SLOW_INTERVAL
-#define TCP_SLOW_INTERVAL      (2*TCP_TMR_INTERVAL)  /* the coarse grained timeout in milliseconds */
+#define TCP_SLOW_INTERVAL      (2*TCP_TMR_INTERVAL)  /* 慢定时器定时周期 the coarse grained timeout in milliseconds */
 #endif /* TCP_SLOW_INTERVAL */
 
-#define TCP_FIN_WAIT_TIMEOUT 20000 /* milliseconds */
-#define TCP_SYN_RCVD_TIMEOUT 20000 /* milliseconds */
+#define TCP_FIN_WAIT_TIMEOUT 20000 /* FIN_WAIT_2 状态等待时间 milliseconds */
+#define TCP_SYN_RCVD_TIMEOUT 20000 /* SYN_RCVD 状态等待时间 milliseconds */
 
-#define TCP_OOSEQ_TIMEOUT        6U /* x RTO */
+#define TCP_OOSEQ_TIMEOUT        6U /* 失序报文重组时间 x RTO */
 
 #ifndef TCP_MSL
-#define TCP_MSL 60000UL /* The maximum segment lifetime in milliseconds */
+#define TCP_MSL 60000UL /* 报文的最大生存时间 The maximum segment lifetime in milliseconds */
 #endif
 
 /* Keepalive values, compliant with RFC 1122. Don't change this unless you know what you're doing */
 #ifndef  TCP_KEEPIDLE_DEFAULT
-#define  TCP_KEEPIDLE_DEFAULT     7200000UL /* Default KEEPALIVE timer in milliseconds */
+#define  TCP_KEEPIDLE_DEFAULT     7200000UL /* 保活时间2小时 Default KEEPALIVE timer in milliseconds */
 #endif
 
 #ifndef  TCP_KEEPINTVL_DEFAULT
-#define  TCP_KEEPINTVL_DEFAULT    75000UL   /* Default Time between KEEPALIVE probes in milliseconds */
+#define  TCP_KEEPINTVL_DEFAULT    75000UL   /* 保活报文的时间间隔 75sDefault Time between KEEPALIVE probes in milliseconds */
 #endif
 
 #ifndef  TCP_KEEPCNT_DEFAULT
-#define  TCP_KEEPCNT_DEFAULT      9U        /* Default Counter for KEEPALIVE probes */
+#define  TCP_KEEPCNT_DEFAULT      9U        /* 每一次保活的最大报文数 Default Counter for KEEPALIVE probes */
 #endif
 
-#define  TCP_MAXIDLE              TCP_KEEPCNT_DEFAULT * TCP_KEEPINTVL_DEFAULT  /* Maximum KEEPALIVE probe time */
+#define  TCP_MAXIDLE              TCP_KEEPCNT_DEFAULT * TCP_KEEPINTVL_DEFAULT  /* 执行保活探查需要消耗的时间 Maximum KEEPALIVE probe time */
 
 /* Fields are (of course) in network byte order.
  * Some fields are converted to host byte order in tcp_input().
@@ -274,25 +274,27 @@ PACK_STRUCT_END
 #define TCP_CHECKSUM_ON_COPY  (LWIP_CHECKSUM_ON_COPY && CHECKSUM_GEN_TCP)
 
 /* This structure represents a TCP segment on the unsent, unacked and ooseq queues */
+ /*定义组织tcp报文段的结构*/
 struct tcp_seg {
-  struct tcp_seg *next;    /* used when putting segements on a queue */
-  struct pbuf *p;          /* buffer containing data + TCP header */
-  u16_t len;               /* the TCP length of this segment */
+  struct tcp_seg *next;    /* 用于将报文段组织为队列的形式 used when putting segements on a queue */
+  struct pbuf *p;          /* 指向装载报文段的pbuf 包含tcp首部 buffer containing data + TCP header */
+  u16_t len;               /* 报文段中的数据长度 the TCP length of this segment */
 #if TCP_OVERSIZE_DBGCHECK
   u16_t oversize_left;     /* Extra bytes available at the end of the last
                               pbuf in unsent (used for asserting vs.
                               tcp_pcb.unsent_oversized only) */
 #endif /* TCP_OVERSIZE_DBGCHECK */ 
-#if TCP_CHECKSUM_ON_COPY
+#if TCP_CHECKSUM_ON_COPY //拷贝时是否校验
   u16_t chksum;
   u8_t  chksum_swapped;
 #endif /* TCP_CHECKSUM_ON_COPY */
-  u8_t  flags;
-#define TF_SEG_OPTS_MSS         (u8_t)0x01U /* Include MSS option. */
-#define TF_SEG_OPTS_TS          (u8_t)0x02U /* Include timestamp option. */
-#define TF_SEG_DATA_CHECKSUMMED (u8_t)0x04U /* ALL data (not the header) is
+  u8_t  flags;  //表示所描述的报文段的的选项属性
+#define TF_SEG_OPTS_MSS         (u8_t)0x01U /* 包含了最大报文段大小的选项 Include MSS option. */
+#define TF_SEG_OPTS_TS          (u8_t)0x02U /* 包含了时间戳选项 Include timestamp option. */
+#define TF_SEG_DATA_CHECKSUMMED (u8_t)0x04U /* 已经校验完了了 ALL data (not the header) is
                                                checksummed into 'chksum' */
-  struct tcp_hdr *tcphdr;  /* the TCP header */
+  struct tcp_hdr *tcphdr;  /* 指向报文段中的tcp首部 
+    the TCP header */
 };
 
 #define LWIP_TCP_OPT_LENGTH(flags)              \

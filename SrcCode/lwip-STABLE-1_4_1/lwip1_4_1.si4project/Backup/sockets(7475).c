@@ -57,49 +57,47 @@
 #endif
 
 #include <string.h>
-//最大的socket连接数量
+
 #define NUM_SOCKETS MEMP_NUM_NETCONN
 
 /** Contains all internal pointers and states used for a socket */
-/* lwip_sock结构定义 用于描述一个socket的所有属性 */
 struct lwip_sock {
   /** sockets currently are built on netconns, each socket has one netconn */
-  struct netconn *conn;	//与socket对应的netconn结构 其上注册了event_callback函数
+  struct netconn *conn;
   /** data that was left from the previous read */
-  void *lastdata;	//上一次读取后未读完的数据（实际指向一个pbuf）
+  void *lastdata;
   /** offset in the data that was left from the previous read */
-  u16_t lastoffset;	//未读完的数据在pbuf中的位置
+  u16_t lastoffset;
   /** number of times data was received, set by event_callback(),
       tested by the receive and select functions */
-  s16_t rcvevent;	//该socket上数据接收事件次数 
+  s16_t rcvevent;
   /** number of times data was ACKed (free send buffer), set by event_callback(),
       tested by select */
-  u16_t sendevent;		//该socket上数据发送次数
+  u16_t sendevent;
   /** error happened for this socket, set by event_callback(), tested by select */
-  u16_t errevent; 		//该socket上错误事件次数
+  u16_t errevent; 
   /** last error that occurred on this socket */
-  int err;		//该socket上最后一次操作的错误码
+  int err;
   /** counter of how many threads are waiting for this socket using select */
-  int select_waiting;	//记录对该socket调用select的线程个数
+  int select_waiting;
 };
 
 /** Description for a task waiting in select */
-/* 定义一个select函数所需要的所有信息 */
 struct lwip_select_cb {
   /** Pointer to the next waiting task */
-  struct lwip_select_cb *next;	//用于组织链表
+  struct lwip_select_cb *next;
   /** Pointer to the previous waiting task */
-  struct lwip_select_cb *prev;	//双向链表
+  struct lwip_select_cb *prev;
   /** readset passed to select */
-  fd_set *readset;	//select函数调用时传入的readset参数
+  fd_set *readset;
   /** writeset passed to select */
-  fd_set *writeset;	//select函数调用时，传入的writeset参数
+  fd_set *writeset;
   /** unimplemented: exceptset passed to select */
-  fd_set *exceptset; //select函数调用时，传入的exceptset参数
+  fd_set *exceptset;
   /** don't signal the same semaphore twice: set to 1 when signalled */
-  int sem_signalled;	//内核是否对该结构释放了信号量
+  int sem_signalled;
   /** semaphore to wake up a task waiting for select */
-  sys_sem_t sem;	//select将阻塞的信号量
+  sys_sem_t sem;
 };
 
 /** This struct is used to pass data to the set/getsockopt_internal
@@ -124,10 +122,9 @@ struct lwip_setgetsockopt_data {
   err_t err;
 };
 
-/** The global array of available sockets socket资源定义 */
+/** The global array of available sockets */
 static struct lwip_sock sockets[NUM_SOCKETS];
 /** The global list of tasks waiting for select */
-/* 用于组织所有select的lwip_select_cb结构到链表上 */
 static struct lwip_select_cb *select_cb_list;
 /** This counter is increased from lwip_select when the list is chagned
     and checked in event_callback to see if it has changed. */
@@ -307,12 +304,8 @@ free_socket(struct lwip_sock *sock, int is_tcp)
 
 /* Below this, the well-known socket functions are implemented.
  * Use google.com or opengroup.org to get a good description :-)
- * 
+ *
  * Exceptions are documented!
- * 函数功能			：	在tcp服务器中用到， 从套接字的连接请求队列中获取一个新建立的连接，如果请求队列为空，该函数会阻塞，直到新连接的到来
- * 返回值			：	函数会返回新的套接字描述符，失败返回-1
- *
- *
  */
 
 int
@@ -407,12 +400,7 @@ lwip_accept(int s, struct sockaddr *addr, socklen_t *addrlen)
   sock_set_errno(sock, 0);
   return newsock;
 }
-/**************************************************************
-* 函数功能		：	将一个套接字与本地地址信息进行绑定
-* 参数s		：	将要绑定的对象
-* 参数name	：	指向一个结构体，其中包含了本地IP和端口号等信息
-* 参数namelen:	指出了结构体的长度
-*************************************************************/
+
 int
 lwip_bind(int s, const struct sockaddr *name, socklen_t namelen)
 {
@@ -452,11 +440,7 @@ lwip_bind(int s, const struct sockaddr *name, socklen_t namelen)
   sock_set_errno(sock, 0);
   return 0;
 }
-/******************************************
-* 函数功能		：	关闭一个套接字
-* 				成功执行该函数后，对用的套接字描述符将不再有效
-*				对于tcp连接来说，该函数的执行将触发断开握手的过程
-*******************************************/
+
 int
 lwip_close(int s)
 {
@@ -482,12 +466,7 @@ lwip_close(int s)
   set_errno(0);
   return 0;
 }
-/********************************************
-* 函数功能		：	将套接字与目的地址信息进行绑定，在udp连接中会记录目的IP地址和目的端口号 在tcp连接中则会触发握手连接的过程
-* 参数同bind函数的参数
-*
-*
-**********************************************/
+
 int
 lwip_connect(int s, const struct sockaddr *name, socklen_t namelen)
 {
@@ -537,7 +516,7 @@ lwip_connect(int s, const struct sockaddr *name, socklen_t namelen)
 /**
  * Set a socket into listen mode.
  * The socket may not have been used for another connection previously.
- * 将一个套接字置为listen状态，只有tcp server才能用
+ *
  * @param s the socket to set to listening mode
  * @param backlog (ATTENTION: needs TCP_LISTEN_BACKLOG=1)
  * @return 0 on success, non-zero on failure
@@ -573,12 +552,7 @@ lwip_listen(int s, int backlog)
   sock_set_errno(sock, 0);
   return 0;
 }
-/*******************************************************
-* 函数功能		：	从套接字中接收数据 参数同sendto
-* 返回值		：	若成功，则返回成功接收到的字节数；若失败则返回-1 若返回0
-*				则表示连接被对方断开或者连接出现异常，这个时候应用程序需要
-*				对异常做出处理，通常情况下是关闭socket
-*******************************************************/
+
 int
 lwip_recvfrom(int s, void *mem, size_t len, int flags,
         struct sockaddr *from, socklen_t *fromlen)
@@ -763,22 +737,19 @@ lwip_recvfrom(int s, void *mem, size_t len, int flags,
   sock_set_errno(sock, 0);
   return off;
 }
-		
-/**直接调用recvfrom**/
+
 int
 lwip_read(int s, void *mem, size_t len)
 {
   return lwip_recvfrom(s, mem, len, 0, NULL, NULL);
 }
 
-/**直接调用recvfrom**/
 int
 lwip_recv(int s, void *mem, size_t len, int flags)
 {
   return lwip_recvfrom(s, mem, len, flags, NULL, NULL);
 }
 
-/* 在一条已建立连接的上发送数据，既可以用于tcp又可以用于udp*/
 int
 lwip_send(int s, const void *data, size_t size, int flags)
 {
@@ -814,13 +785,7 @@ lwip_send(int s, const void *data, size_t size, int flags)
   sock_set_errno(sock, err_to_errno(err));
   return (err == ERR_OK ? (int)written : -1);
 }
-/************************************************
-* 函数功能		：	主要在udp连接中使用，作用是向另一端发送udp报文
-* data,size	:	待发送数据的起始地址和长度
-* flags		:	指明发送时的特殊处理，如带外数据，紧急数据等 通常设置为0
-* to tolen	： 	指明了目的地址信息及信息长度
-* 返回值		：	发送成功返回成功发送的字节数，发送失败返回-1
-**********************************************************/
+
 int
 lwip_sendto(int s, const void *data, size_t size, int flags,
        const struct sockaddr *to, socklen_t tolen)
@@ -978,14 +943,7 @@ lwip_sendto(int s, const void *data, size_t size, int flags,
   sock_set_errno(sock, err_to_errno(err));
   return (err == ERR_OK ? short_size : -1);
 }
-/**********************************************************
-*函数功能：向内核申请一个套接字
-*输入参数：
-*domain ：指明该套接字使用的协议蔟 对于TCP/IP协议蔟来说通常是AF_INET
-*type   ：协议蔟中的具体服务类型
-*protocol：对于TCP和UDP连接来说 通常为0
-*输出参数：失败返回-1 
-***********************************************************/
+
 int
 lwip_socket(int domain, int type, int protocol)
 {
@@ -1041,7 +999,7 @@ lwip_socket(int domain, int type, int protocol)
   set_errno(0);
   return i;
 }
-/* 发送函数 本质是调用send函数 */
+
 int
 lwip_write(int s, const void *data, size_t size)
 {
@@ -1125,14 +1083,6 @@ lwip_selscan(int maxfdp1, fd_set *readset_in, fd_set *writeset_in, fd_set *excep
 
 /**
  * Processing exceptset is not yet implemented.
- * 函数功能：监听一个或多个套接字的变化，该函数会阻塞，直到一个或多个套接字状态发生改变
- * maxfdp1 : 指明了将要监听的所有套接字的范围 通常取值为最大套接字值+1
- * readset ： 套接字的集合，通常保存当套接字上的数据可读时（内核收到了新的数据），系统就告诉
- *            select函数返回
- * writeset: 当套接字上的数据可写时（发送缓冲区可用），系统告诉select函数返回
- * exceptset: 当套接字上有异常或者紧急情况发生时，系统告诉select函数返回
- * timeout : select函数阻塞超时时间
- * 
  */
 int
 lwip_select(int maxfdp1, fd_set *readset, fd_set *writeset, fd_set *exceptset,
@@ -1501,13 +1451,6 @@ lwip_getsockname(int s, struct sockaddr *name, socklen_t *namelen)
   return lwip_getaddrname(s, name, namelen, 1);
 }
 
-/*********************************************************
-* 函数功能		：	用于获取套接字的一些基本操作项 
-* level		：	指明该选项要设置的属性属于tcp/ip的哪一层次，常见的有SOL_SOCKET(socket层)、IPPROTO_TCP(TCP层)、IPPROTO_IP(IP层)等
-* optname	:	指明了改层次某个具体选项的名称，比如在socket层，可以设置数据超时接收时间(SO_RCVTIMEO)、数据超时发送时间(SENDTIMEO)、数据接收的缓冲区大小(SO_RCVBUF)等
-*               对于tcp层， 可以禁止或失能nagle算法(TCP_NODELAY)、设置tcp保活时间间隔(TCP_KEEPALIVE)等
-				对于IP层， 可以设置数据包最大生存时间(IP_TTL)、服务类型(IP_TOS)等
-************************************************************/
 int
 lwip_getsockopt(int s, int level, int optname, void *optval, socklen_t *optlen)
 {
@@ -1916,13 +1859,6 @@ lwip_getsockopt_internal(void *arg)
   sys_sem_signal(&sock->conn->op_completed);
 }
 
-/*********************************************************
-* 函数功能		：	用于设置套接字的一些基本操作项 
-* level		：	指明该选项要设置的属性属于tcp/ip的哪一层次，常见的有SOL_SOCKET(socket层)、IPPROTO_TCP(TCP层)、IPPROTO_IP(IP层)等
-* optname	:	指明了改层次某个具体选项的名称，比如在socket层，可以设置数据超时接收时间(SO_RCVTIMEO)、数据超时发送时间(SENDTIMEO)、数据接收的缓冲区大小(SO_RCVBUF)等
-*               对于tcp层， 可以禁止或失能nagle算法(TCP_NODELAY)、设置tcp保活时间间隔(TCP_KEEPALIVE)等
-				对于IP层， 可以设置数据包最大生存时间(IP_TTL)、服务类型(IP_TOS)等
-************************************************************/
 int
 lwip_setsockopt(int s, int level, int optname, const void *optval, socklen_t optlen)
 {
@@ -2341,12 +2277,6 @@ lwip_setsockopt_internal(void *arg)
   sys_sem_signal(&sock->conn->op_completed);
 }
 
-/*******************************************************
-* 函数功能		：	用于获取或设置套接字的数据流属性
-* cmd		:	指明对套接字操作的命令，在lwip中只支持 FIONREAD和FIONBIO两个命令
-* argp		：	不同的命令有不同的解读方式
-*
-***********************************************************/
 int
 lwip_ioctl(int s, long cmd, void *argp)
 {

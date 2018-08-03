@@ -135,7 +135,7 @@ tcp_init(void)
 }
 
 /**
- * Called periodically to dispatch TCP timers.
+ * Called periodically to dispatch TCP timers. 250ms调用一次
  */
 void
 tcp_tmr(void)
@@ -154,7 +154,7 @@ tcp_tmr(void)
  * Closes the TX side of a connection held by the PCB.
  * For tcp_close(), a RST is sent if the application didn't receive all data
  * (tcp_recved() not called for all data passed to recv callback).
- *
+ *  关闭一个tcp连接
  * Listening pcbs are freed and may not be referenced any more.
  * Connection pcbs are freed if not yet connected and may not be referenced
  * any more. If a connection is established (at least SYN received or in
@@ -170,24 +170,26 @@ static err_t
 tcp_close_shutdown(struct tcp_pcb *pcb, u8_t rst_on_unacked_data)
 {
   err_t err;
-
+    
+   /* 如果还处于连接状态或者等待关闭状态*/
   if (rst_on_unacked_data && ((pcb->state == ESTABLISHED) || (pcb->state == CLOSE_WAIT))) {
-    if ((pcb->refused_data != NULL) || (pcb->rcv_wnd != TCP_WND)) {
+    if ((pcb->refused_data != NULL) || (pcb->rcv_wnd != TCP_WND)) {  // 如果还有没有被应用层取走的数据或者接收窗口不等于默认接收窗口
       /* Not all data received by application, send RST to tell the remote
          side about this. */
       LWIP_ASSERT("pcb->flags & TF_RXCLOSED", pcb->flags & TF_RXCLOSED);
 
       /* don't call tcp_abort here: we must not deallocate the pcb since
          that might not be expected when calling tcp_close */
+        /* 发送一个rst复位信号给目的tcp*/
       tcp_rst(pcb->snd_nxt, pcb->rcv_nxt, &pcb->local_ip, &pcb->remote_ip,
         pcb->local_port, pcb->remote_port);
 
-      tcp_pcb_purge(pcb);
-      TCP_RMV_ACTIVE(pcb);
+      tcp_pcb_purge(pcb); //释放该控制块的所有数据缓冲区 但是控制块本身不会被释放
+      TCP_RMV_ACTIVE(pcb);  //从tcp_active_pcbs链表上删除该控制块
       if (pcb->state == ESTABLISHED) {
         /* move to TIME_WAIT since we close actively */
-        pcb->state = TIME_WAIT;
-        TCP_REG(&tcp_tw_pcbs, pcb);
+        pcb->state = TIME_WAIT; //设置为等待关闭状态
+        TCP_REG(&tcp_tw_pcbs, pcb); //将该控制块加入到time wait等待队列中去
       } else {
         /* CLOSE_WAIT: deallocate the pcb since we already sent a RST for it */
         memp_free(MEMP_TCP_PCB, pcb);
@@ -195,8 +197,8 @@ tcp_close_shutdown(struct tcp_pcb *pcb, u8_t rst_on_unacked_data)
       return ERR_OK;
     }
   }
-
-  switch (pcb->state) {
+    /* 根据控制块的不同状态做出不同的处理 */
+  switch (pcb->state) { 
   case CLOSED:
     /* Closing a pcb in the CLOSED state might seem erroneous,
      * however, it is in this state once allocated and as yet unused
@@ -207,46 +209,46 @@ tcp_close_shutdown(struct tcp_pcb *pcb, u8_t rst_on_unacked_data)
      * been freed, and so any remaining handles are bogus. */
     err = ERR_OK;
     if (pcb->local_port != 0) {
-      TCP_RMV(&tcp_bound_pcbs, pcb);
+      TCP_RMV(&tcp_bound_pcbs, pcb);    //从链表上删除
     }
-    memp_free(MEMP_TCP_PCB, pcb);
+    memp_free(MEMP_TCP_PCB, pcb); //释放内存池空间
     pcb = NULL;
     break;
   case LISTEN:
     err = ERR_OK;
-    tcp_pcb_remove(&tcp_listen_pcbs.pcbs, pcb);
-    memp_free(MEMP_TCP_PCB_LISTEN, pcb);
+    tcp_pcb_remove(&tcp_listen_pcbs.pcbs, pcb); //从listen链表上删除
+    memp_free(MEMP_TCP_PCB_LISTEN, pcb);    //释放内存空间
     pcb = NULL;
     break;
   case SYN_SENT:
     err = ERR_OK;
-    TCP_PCB_REMOVE_ACTIVE(pcb);
-    memp_free(MEMP_TCP_PCB, pcb);
+    TCP_PCB_REMOVE_ACTIVE(pcb);     //从active链表上删除 
+    memp_free(MEMP_TCP_PCB, pcb);   //释放内存空间
     pcb = NULL;
     snmp_inc_tcpattemptfails();
     break;
   case SYN_RCVD:
-    err = tcp_send_fin(pcb);
+    err = tcp_send_fin(pcb);        //发送一个断开连接的fin报文
     if (err == ERR_OK) {
       snmp_inc_tcpattemptfails();
-      pcb->state = FIN_WAIT_1;
+      pcb->state = FIN_WAIT_1;  //置状态为fin_wait_1：程序已关闭该连接
     }
     break;
-  case ESTABLISHED:
-    err = tcp_send_fin(pcb);
+  case ESTABLISHED:         //连接状态
+    err = tcp_send_fin(pcb);    //发送一个fin断开连接报文
     if (err == ERR_OK) {
       snmp_inc_tcpestabresets();
-      pcb->state = FIN_WAIT_1;
+      pcb->state = FIN_WAIT_1;  //置状态为fin_wait_1 ：程序已关闭该连接
     }
     break;
-  case CLOSE_WAIT:
-    err = tcp_send_fin(pcb);
+  case CLOSE_WAIT:               //已经收到对方的fin报文
+    err = tcp_send_fin(pcb);        //构造fin握手报文
     if (err == ERR_OK) {
       snmp_inc_tcpestabresets();
-      pcb->state = LAST_ACK;
+      pcb->state = LAST_ACK;    //进入last ack等待ack或者超时
     }
     break;
-  default:
+  default:      //其他状态直接由tcp定时函数来处理
     /* Has already been closed, do nothing. */
     err = ERR_OK;
     pcb = NULL;
@@ -262,7 +264,7 @@ tcp_close_shutdown(struct tcp_pcb *pcb, u8_t rst_on_unacked_data)
     /* @todo: When implementing SO_LINGER, this must be changed somehow:
        If SOF_LINGER is set, the data should be sent and acked before close returns.
        This can only be valid for sequential APIs, not for the raw API. */
-    tcp_output(pcb);
+    tcp_output(pcb);    //调用函数发送控制队列中的剩余报文段 包括fin握手报文 
   }
   return err;
 }
@@ -289,9 +291,9 @@ tcp_close(struct tcp_pcb *pcb)
   tcp_debug_print_state(pcb->state);
 #endif /* TCP_DEBUG */
 
-  if (pcb->state != LISTEN) {
+  if (pcb->state != LISTEN) {       //如果不是处于侦听状态
     /* Set a flag not to receive any more data... */
-    pcb->flags |= TF_RXCLOSED;
+    pcb->flags |= TF_RXCLOSED;  //则不再接收任何数据
   }
   /* ... and close */
   return tcp_close_shutdown(pcb, 1);
@@ -419,7 +421,7 @@ tcp_abort(struct tcp_pcb *pcb)
  * Binds the connection to a local portnumber and IP address. If the
  * IP address is not given (i.e., ipaddr == NULL), the IP address of
  * the outgoing network interface is used instead.
- *
+ * 将控制块与本地端口号和IP地址绑定
  * @param pcb the tcp_pcb to bind (no check is done whether this pcb is
  *        already bound!)
  * @param ipaddr the local ip address to bind to (use IP_ADDR_ANY to bind
@@ -448,7 +450,7 @@ tcp_bind(struct tcp_pcb *pcb, ip_addr_t *ipaddr, u16_t port)
     max_pcb_list = NUM_TCP_PCB_LISTS_NO_TIME_WAIT;
   }
 #endif /* SO_REUSE */
-
+    //如果端口号为0 则为其分配一个新端口号
   if (port == 0) {
     port = tcp_new_port();
     if (port == 0) {
@@ -456,7 +458,7 @@ tcp_bind(struct tcp_pcb *pcb, ip_addr_t *ipaddr, u16_t port)
     }
   }
 
-  /* Check if the address already is in use (on all lists) */
+  /* Check if the address already is in use (on all lists) 遍历四种链表 确定该IP地址和端口号没有被其他控制块使用*/
   for (i = 0; i < max_pcb_list; i++) {
     for(cpcb = *tcp_pcb_lists[i]; cpcb != NULL; cpcb = cpcb->next) {
       if (cpcb->local_port == port) {
@@ -479,10 +481,10 @@ tcp_bind(struct tcp_pcb *pcb, ip_addr_t *ipaddr, u16_t port)
   }
 
   if (!ip_addr_isany(ipaddr)) {
-    pcb->local_ip = *ipaddr;
+    pcb->local_ip = *ipaddr;    //绑定IP地址
   }
-  pcb->local_port = port;
-  TCP_REG(&tcp_bound_pcbs, pcb);
+  pcb->local_port = port;   //绑定端口号
+  TCP_REG(&tcp_bound_pcbs, pcb);    //将该控制块插入到tcp_bound_pcbs的头部
   LWIP_DEBUGF(TCP_DEBUG, ("tcp_bind: bind to port %"U16_F"\n", port));
   return ERR_OK;
 }
@@ -506,9 +508,11 @@ tcp_accept_null(void *arg, struct tcp_pcb *pcb, err_t err)
  * is able to accept incoming connections. The protocol control block
  * is reallocated in order to consume less memory. Setting the
  * connection to LISTEN is an irreversible process.
- *
+ * 将某个绑定的控制块设置为listen状态
+ * 先申请一个tcp_pcb_listen控制块结构 然后将tcp_pcb中的相关参数拷贝过来
+ * 然后将tcp_pcb_listen结构挂接到tcp_listen_pcbs链表上，同时删除tcp_bound_pcbs链表上对应的控制块
  * @param pcb the original tcp_pcb
- * @param backlog the incoming connections queue limit
+ * @param backlog the incoming connections queue limit 用户参数 这里未使用到
  * @return tcp_pcb used for listening, consumes less memory.
  *
  * @note The original tcp_pcb is freed. This function therefore has to be
@@ -523,7 +527,7 @@ tcp_listen_with_backlog(struct tcp_pcb *pcb, u8_t backlog)
   LWIP_UNUSED_ARG(backlog);
   LWIP_ERROR("tcp_listen: pcb already connected", pcb->state == CLOSED, return NULL);
 
-  /* already listening? */
+  /* already listening? 如果已经是侦听状态 直接返回*/
   if (pcb->state == LISTEN) {
     return pcb;
   }
@@ -542,31 +546,31 @@ tcp_listen_with_backlog(struct tcp_pcb *pcb, u8_t backlog)
     }
   }
 #endif /* SO_REUSE */
-  lpcb = (struct tcp_pcb_listen *)memp_malloc(MEMP_TCP_PCB_LISTEN);
-  if (lpcb == NULL) {
+  lpcb = (struct tcp_pcb_listen *)memp_malloc(MEMP_TCP_PCB_LISTEN); //分配一个侦听控制块的内存池空间
+  if (lpcb == NULL) {   //分配失败直接返回
     return NULL;
   }
-  lpcb->callback_arg = pcb->callback_arg;
-  lpcb->local_port = pcb->local_port;
-  lpcb->state = LISTEN;
-  lpcb->prio = pcb->prio;
-  lpcb->so_options = pcb->so_options;
+  lpcb->callback_arg = pcb->callback_arg;   //拷贝相关字段
+  lpcb->local_port = pcb->local_port;       //拷贝本地端口号
+  lpcb->state = LISTEN;                          //将控制块设置为侦听状态
+  lpcb->prio = pcb->prio;                         //拷贝优先级
+  lpcb->so_options = pcb->so_options;   //
   ip_set_option(lpcb, SOF_ACCEPTCONN);
-  lpcb->ttl = pcb->ttl;
-  lpcb->tos = pcb->tos;
-  ip_addr_copy(lpcb->local_ip, pcb->local_ip);
+  lpcb->ttl = pcb->ttl;                             //拷贝ttl字段
+  lpcb->tos = pcb->tos;                         //拷贝服务类型
+  ip_addr_copy(lpcb->local_ip, pcb->local_ip);  //拷贝ip地址
   if (pcb->local_port != 0) {
-    TCP_RMV(&tcp_bound_pcbs, pcb);
+    TCP_RMV(&tcp_bound_pcbs, pcb);      //将该控制块从tcp_bound_pcbs链表上删除
   }
-  memp_free(MEMP_TCP_PCB, pcb);
-#if LWIP_CALLBACK_API
-  lpcb->accept = tcp_accept_null;
+  memp_free(MEMP_TCP_PCB, pcb);       //释放pcb空间
+#if LWIP_CALLBACK_API   
+  lpcb->accept = tcp_accept_null;             //接受客户端连接的默认回掉函数
 #endif /* LWIP_CALLBACK_API */
 #if TCP_LISTEN_BACKLOG
-  lpcb->accepts_pending = 0;
+  lpcb->accepts_pending = 0;                        
   lpcb->backlog = (backlog ? backlog : 1);
 #endif /* TCP_LISTEN_BACKLOG */
-  TCP_REG(&tcp_listen_pcbs.pcbs, (struct tcp_pcb *)lpcb);
+  TCP_REG(&tcp_listen_pcbs.pcbs, (struct tcp_pcb *)lpcb); //控制块加入tcp_listen_pcbs链表的头部
   return (struct tcp_pcb *)lpcb;
 }
 
@@ -671,11 +675,11 @@ again:
 /**
  * Connects to another host. The function given as the "connected"
  * argument will be called when the connection has been established.
- *
- * @param pcb the tcp_pcb used to establish the connection
- * @param ipaddr the remote ip address to connect to
- * @param port the remote tcp port to connect to
- * @param connected callback function to call when connected (or on error)
+ * 向服务器发送一个syn握手报文
+ * @param pcb the tcp_pcb used to establish the connection  用来和服务器建立连接的tcp控制块
+ * @param ipaddr the remote ip address to connect to 服务器IP地址
+ * @param port the remote tcp port to connect to    服务器端口号
+ * @param connected callback function to call when connected (or on error)  注册控制块的回掉函数 当syn报文得到服务器的正确响应后 该函数将被回掉
  * @return ERR_VAL if invalid arguments are given
  *         ERR_OK if connect request has been sent
  *         other err_t values if connect request couldn't be sent
@@ -691,29 +695,29 @@ tcp_connect(struct tcp_pcb *pcb, ip_addr_t *ipaddr, u16_t port,
   LWIP_ERROR("tcp_connect: can only connect from state CLOSED", pcb->state == CLOSED, return ERR_ISCONN);
 
   LWIP_DEBUGF(TCP_DEBUG, ("tcp_connect to port %"U16_F"\n", port));
-  if (ipaddr != NULL) {
+  if (ipaddr != NULL) {     //如果服务器地址有效 则在连接中记录该IP地址
     pcb->remote_ip = *ipaddr;
   } else {
-    return ERR_VAL;
+    return ERR_VAL;     //无效则返回
   }
-  pcb->remote_port = port;
+  pcb->remote_port = port;      //记录服务器端口号
 
   /* check if we have a route to the remote host */
-  if (ip_addr_isany(&(pcb->local_ip))) {
-    /* no local IP address set, yet. */
+  if (ip_addr_isany(&(pcb->local_ip))) {    //若本地未绑定任何端口
+    /* no local IP address set, yet. 检测网卡是否初始化且目的IP是否可以通过本网卡发送*/
     struct netif *netif = ip_route(&(pcb->remote_ip));
-    if (netif == NULL) {
+    if (netif == NULL) {    //没有网卡能发送则直接返回
       /* Don't even try to send a SYN packet if we have no route
          since that will fail. */
       return ERR_RTE;
     }
     /* Use the netif's IP address as local address. */
-    ip_addr_copy(pcb->local_ip, netif->ip_addr);
+    ip_addr_copy(pcb->local_ip, netif->ip_addr); //设置网卡地址为本地IP地址
   }
 
-  old_local_port = pcb->local_port;
-  if (pcb->local_port == 0) {
-    pcb->local_port = tcp_new_port();
+  old_local_port = pcb->local_port; 
+  if (pcb->local_port == 0) {   //如果本地端口号没有绑定 
+    pcb->local_port = tcp_new_port();   //则绑定一个临时端口号
     if (pcb->local_port == 0) {
       return ERR_BUF;
     }
@@ -738,46 +742,47 @@ tcp_connect(struct tcp_pcb *pcb, ip_addr_t *ipaddr, u16_t port,
     }
   }
 #endif /* SO_REUSE */
-  iss = tcp_next_iss();
-  pcb->rcv_nxt = 0;
-  pcb->snd_nxt = iss;
-  pcb->lastack = iss - 1;
-  pcb->snd_lbb = iss - 1;
-  pcb->rcv_wnd = TCP_WND;
-  pcb->rcv_ann_wnd = TCP_WND;
-  pcb->rcv_ann_right_edge = pcb->rcv_nxt;
+  iss = tcp_next_iss();     //初始化序号
+  pcb->rcv_nxt = 0;         //下一个期望接受的字节序号
+  pcb->snd_nxt = iss;     //下一个将要发送的数据的序号
+  pcb->lastack = iss - 1;   //接收到的最大确认号
+  pcb->snd_lbb = iss - 1;   //下一个被缓冲的应用程序数据的编号
+  pcb->rcv_wnd = TCP_WND;   //当前接收窗口的大小
+  pcb->rcv_ann_wnd = TCP_WND;   //将向对方通告的窗口大小 随着数据的递交动态变化
+  pcb->rcv_ann_right_edge = pcb->rcv_nxt;   //上一次通告时的窗口的右边界值
   pcb->snd_wnd = TCP_WND;
   /* As initial send MSS, we use TCP_MSS but limit it to 536.
      The send MSS is updated when an MSS option is received. */
-  pcb->mss = (TCP_MSS > 536) ? 536 : TCP_MSS;
+  pcb->mss = (TCP_MSS > 536) ? 536 : TCP_MSS;   //对方可接收的最大报文段大小  
 #if TCP_CALCULATE_EFF_SEND_MSS
   pcb->mss = tcp_eff_send_mss(pcb->mss, ipaddr);
 #endif /* TCP_CALCULATE_EFF_SEND_MSS */
-  pcb->cwnd = 1;
-  pcb->ssthresh = pcb->mss * 10;
+  pcb->cwnd = 1;    //初始化阻塞窗口
+  pcb->ssthresh = pcb->mss * 10;    //
 #if LWIP_CALLBACK_API
-  pcb->connected = connected;
+  pcb->connected = connected;   //注册回掉函数
 #else /* LWIP_CALLBACK_API */  
   LWIP_UNUSED_ARG(connected);
 #endif /* LWIP_CALLBACK_API */
 
-  /* Send a SYN together with the MSS option. */
+  /* Send a SYN together with the MSS option.  */
+  /* 构造一个报文段 syn为1 数据为空 且报文中包含最大报文段选项 函数将该报文段挂载到控制块的usent队列上*/
   ret = tcp_enqueue_flags(pcb, TCP_SYN);
-  if (ret == ERR_OK) {
+  if (ret == ERR_OK) {  //构造成功
     /* SYN segment was enqueued, changed the pcbs state now */
-    pcb->state = SYN_SENT;
+    pcb->state = SYN_SENT;  //将pcb state设置为synsent状态 ：连接请求已发送 等待确认
     if (old_local_port != 0) {
-      TCP_RMV(&tcp_bound_pcbs, pcb);
+      TCP_RMV(&tcp_bound_pcbs, pcb); //将该控制块从tcp_bound_pcbs链表上移除
     }
-    TCP_REG_ACTIVE(pcb);
+    TCP_REG_ACTIVE(pcb);    //将该控制块挂载到tcp_active_pcbs链表头部
     snmp_inc_tcpactiveopens();
 
-    tcp_output(pcb);
+    tcp_output(pcb);        //将控制块上的连接报文段发送出去
   }
   return ret;
 }
 
-/**
+/**tcp慢定时器函数 500ms被系统调用一次
  * Called every 500 ms and implements the retransmission timer and the timer that
  * removes PCBs that have been in TIME-WAIT for enough time. It also increments
  * various timers such as the inactivity timer in each PCB.
@@ -795,13 +800,13 @@ tcp_slowtmr(void)
 
   err = ERR_OK;
 
-  ++tcp_ticks;
+  ++tcp_ticks;      //tcp系统时间全局变量
   ++tcp_timer_ctr;
 
 tcp_slowtmr_start:
   /* Steps through all of the active PCBs. */
   prev = NULL;
-  pcb = tcp_active_pcbs;
+  pcb = tcp_active_pcbs;    //处理active链表上的控制块
   if (pcb == NULL) {
     LWIP_DEBUGF(TCP_DEBUG, ("tcp_slowtmr: no active pcbs\n"));
   }
@@ -828,23 +833,24 @@ tcp_slowtmr_start:
       ++pcb_remove;
       LWIP_DEBUGF(TCP_DEBUG, ("tcp_slowtmr: max DATA retries reached\n"));
     } else {
-      if (pcb->persist_backoff > 0) {
+      if (pcb->persist_backoff > 0) {   //如果坚持定时器已经开启
         /* If snd_wnd is zero, use persist timer to send 1 byte probes
          * instead of using the standard retransmission mechanism. */
-        pcb->persist_cnt++;
-        if (pcb->persist_cnt >= tcp_persist_backoff[pcb->persist_backoff-1]) {
-          pcb->persist_cnt = 0;
+        pcb->persist_cnt++; //增加定时器计数值
+          /* 如果计数值超过某个计数值上线时 进行窗口探查*/
+        if (pcb->persist_cnt >= tcp_persist_backoff[pcb->persist_backoff-1]) {  
+          pcb->persist_cnt = 0; //复位计数值
           if (pcb->persist_backoff < sizeof(tcp_persist_backoff)) {
-            pcb->persist_backoff++;
+            pcb->persist_backoff++; //增加已发送探查报文数
           }
-          tcp_zero_window_probe(pcb);
+          tcp_zero_window_probe(pcb);   //发送一个窗口探查报文
         }
       } else {
         /* Increase the retransmission timer if it is running */
-        if(pcb->rtime >= 0) {
-          ++pcb->rtime;
+        if(pcb->rtime >= 0) { 
+          ++pcb->rtime;     //重传定时器的值加1
         }
-
+        /* 有数据未确认 且超时发生*/
         if (pcb->unacked != NULL && pcb->rtime >= pcb->rto) {
           /* Time for a retransmission. */
           LWIP_DEBUGF(TCP_RTO_DEBUG, ("tcp_slowtmr: rtime %"S16_F
@@ -854,13 +860,13 @@ tcp_slowtmr_start:
           /* Double retransmission time-out unless we are trying to
            * connect to somebody (i.e., we are in SYN_SENT). */
           if (pcb->state != SYN_SENT) {
-            pcb->rto = ((pcb->sa >> 3) + pcb->sv) << tcp_backoff[pcb->nrtx];
+            pcb->rto = ((pcb->sa >> 3) + pcb->sv) << tcp_backoff[pcb->nrtx];    //动态设置rto 与重传次数和rtt值相关
           }
 
           /* Reset the retransmission timer. */
-          pcb->rtime = 0;
+          pcb->rtime = 0;   //清空重传定时器
 
-          /* Reduce congestion window and ssthresh. */
+          /* Reduce congestion window and ssthresh. 拥塞控制相关 */
           eff_wnd = LWIP_MIN(pcb->cwnd, pcb->snd_wnd);
           pcb->ssthresh = eff_wnd >> 1;
           if (pcb->ssthresh < (pcb->mss << 1)) {
@@ -873,44 +879,44 @@ tcp_slowtmr_start:
  
           /* The following needs to be called AFTER cwnd is set to one
              mss - STJ */
-          tcp_rexmit_rto(pcb);
+          tcp_rexmit_rto(pcb);  //重传报文段
         }
       }
     }
     /* Check if this PCB has stayed too long in FIN-WAIT-2 */
-    if (pcb->state == FIN_WAIT_2) {
+    if (pcb->state == FIN_WAIT_2) {     //FIN_WAIT_2定时器超时
       /* If this PCB is in FIN_WAIT_2 because of SHUT_WR don't let it time out. */
       if (pcb->flags & TF_RXCLOSED) {
         /* PCB was fully closed (either through close() or SHUT_RDWR):
            normal FIN-WAIT timeout handling. */
         if ((u32_t)(tcp_ticks - pcb->tmr) >
             TCP_FIN_WAIT_TIMEOUT / TCP_SLOW_INTERVAL) {
-          ++pcb_remove;
+          ++pcb_remove;     //设置删除控制块标志
           LWIP_DEBUGF(TCP_DEBUG, ("tcp_slowtmr: removing pcb stuck in FIN-WAIT-2\n"));
         }
       }
     }
 
     /* Check if KEEPALIVE should be sent */
-    if(ip_get_option(pcb, SOF_KEEPALIVE) &&
-       ((pcb->state == ESTABLISHED) ||
+    if(ip_get_option(pcb, SOF_KEEPALIVE) && //如果使用了保活功能
+       ((pcb->state == ESTABLISHED) ||      //如果是在连接状态或者close wait状态
         (pcb->state == CLOSE_WAIT))) {
       if((u32_t)(tcp_ticks - pcb->tmr) >
-         (pcb->keep_idle + TCP_KEEP_DUR(pcb)) / TCP_SLOW_INTERVAL)
+         (pcb->keep_idle + TCP_KEEP_DUR(pcb)) / TCP_SLOW_INTERVAL) //2小时+9*75s后断开连接
       {
         LWIP_DEBUGF(TCP_DEBUG, ("tcp_slowtmr: KEEPALIVE timeout. Aborting connection to %"U16_F".%"U16_F".%"U16_F".%"U16_F".\n",
                                 ip4_addr1_16(&pcb->remote_ip), ip4_addr2_16(&pcb->remote_ip),
                                 ip4_addr3_16(&pcb->remote_ip), ip4_addr4_16(&pcb->remote_ip)));
         
-        ++pcb_remove;
-        ++pcb_reset;
+        ++pcb_remove;   //设置两个局部变量 后续删除控制块 
+        ++pcb_reset;    //复位连接
       }
       else if((u32_t)(tcp_ticks - pcb->tmr) > 
               (pcb->keep_idle + pcb->keep_cnt_sent * TCP_KEEP_INTVL(pcb))
-              / TCP_SLOW_INTERVAL)
+              / TCP_SLOW_INTERVAL)  //在2小时+9*75s内则发送保活报文
       {
-        tcp_keepalive(pcb);
-        pcb->keep_cnt_sent++;
+        tcp_keepalive(pcb);     //发送保活探查报文
+        pcb->keep_cnt_sent++;   //保活报文数+1
       }
     }
 
@@ -918,37 +924,37 @@ tcp_slowtmr_start:
        inactive for too long, will drop the data (it will eventually
        be retransmitted). */
 #if TCP_QUEUE_OOSEQ
-    if (pcb->ooseq != NULL &&
+    if (pcb->ooseq != NULL &&   //失序报文重组超时
         (u32_t)tcp_ticks - pcb->tmr >= pcb->rto * TCP_OOSEQ_TIMEOUT) {
-      tcp_segs_free(pcb->ooseq);
+      tcp_segs_free(pcb->ooseq);    //设置删除控制块标志
       pcb->ooseq = NULL;
       LWIP_DEBUGF(TCP_CWND_DEBUG, ("tcp_slowtmr: dropping OOSEQ queued data\n"));
     }
 #endif /* TCP_QUEUE_OOSEQ */
 
     /* Check if this PCB has stayed too long in SYN-RCVD */
-    if (pcb->state == SYN_RCVD) {
+    if (pcb->state == SYN_RCVD) {   //SYN_RCVD状态超时
       if ((u32_t)(tcp_ticks - pcb->tmr) >
           TCP_SYN_RCVD_TIMEOUT / TCP_SLOW_INTERVAL) {
-        ++pcb_remove;
+        ++pcb_remove;   //设置删除控制块标志
         LWIP_DEBUGF(TCP_DEBUG, ("tcp_slowtmr: removing pcb stuck in SYN-RCVD\n"));
       }
     }
 
     /* Check if this PCB has stayed too long in LAST-ACK */
-    if (pcb->state == LAST_ACK) {
+    if (pcb->state == LAST_ACK) {   //LAST_ACK状态超时
       if ((u32_t)(tcp_ticks - pcb->tmr) > 2 * TCP_MSL / TCP_SLOW_INTERVAL) {
-        ++pcb_remove;
+        ++pcb_remove;   //设置删除控制块标志
         LWIP_DEBUGF(TCP_DEBUG, ("tcp_slowtmr: removing pcb stuck in LAST-ACK\n"));
       }
     }
 
     /* If the PCB should be removed, do it. */
-    if (pcb_remove) {
+    if (pcb_remove) {   //如果pcb_remove>0 删除pcb
       struct tcp_pcb *pcb2;
       tcp_err_fn err_fn;
       void *err_arg;
-      tcp_pcb_purge(pcb);
+      tcp_pcb_purge(pcb);   //清空控制块上的数据
       /* Remove PCB from tcp_active_pcbs list. */
       if (prev != NULL) {
         LWIP_ASSERT("tcp_slowtmr: middle tcp != tcp_active_pcbs", pcb != tcp_active_pcbs);
@@ -986,7 +992,7 @@ tcp_slowtmr_start:
         prev->polltmr = 0;
         LWIP_DEBUGF(TCP_DEBUG, ("tcp_slowtmr: polling application\n"));
         tcp_active_pcbs_changed = 0;
-        TCP_EVENT_POLL(prev, err);
+        TCP_EVENT_POLL(prev, err);  //调用用户注册的poll函数
         if (tcp_active_pcbs_changed) {
           goto tcp_slowtmr_start;
         }
@@ -1042,6 +1048,44 @@ tcp_slowtmr_start:
  *
  * Automatically called from tcp_tmr().
  */
+//void
+//tcp_fasttmr(void)
+//{
+//  struct tcp_pcb *pcb;
+
+//  ++tcp_timer_ctr;
+
+//tcp_fasttmr_start:
+//  pcb = tcp_active_pcbs;
+
+//  while(pcb != NULL) {
+//    if (pcb->last_timer != tcp_timer_ctr) {
+//      struct tcp_pcb *next;
+//      pcb->last_timer = tcp_timer_ctr;    //标记控制块被处理
+//      /* send delayed ACKs */
+//      if (pcb->flags & TF_ACK_DELAY) {    //如果控制块设置了延时确认
+//        LWIP_DEBUGF(TCP_DEBUG, ("tcp_fasttmr: delayed ACK\n"));
+//        tcp_ack_now(pcb); //发送一个立即确认
+//        tcp_output(pcb);  //且发送待发送的数据
+//        pcb->flags &= ~(TF_ACK_DELAY | TF_ACK_NOW);   //清除标志位
+//      }
+
+//      next = pcb->next;
+
+//      /* If there is data which was previously "refused" by upper layer */
+//      if (pcb->refused_data != NULL) {        //如果某个控制块还有数据未接收
+//        tcp_active_pcbs_changed = 0;      //
+//        tcp_process_refused_data(pcb);    //调用用户回掉函数接收数据
+//        if (tcp_active_pcbs_changed) {    //控制块在tcp_active_pcbs中被删除 
+//          /* application callback has changed the pcb list: restart the loop */
+//          goto tcp_fasttmr_start; //则重新遍历tcp_active_pcbs
+//        }
+//      }
+//      pcb = next;
+//    }
+//  }
+//}
+//快定时器 周期250ms
 void
 tcp_fasttmr(void)
 {
@@ -1270,9 +1314,9 @@ tcp_kill_timewait(void)
 
 /**
  * Allocate a new tcp_pcb structure.
- *
- * @param prio priority for the new pcb
- * @return a new tcp_pcb that initially is in state CLOSED
+ * 分配一个tcp控制块结构并初始化相关字段
+ * @param prio priority for the new pcb 新控制块的优先级
+ * @return a new tcp_pcb that initially is in state CLOSED 指向新控制块的指针
  */
 struct tcp_pcb *
 tcp_alloc(u8_t prio)
@@ -1280,17 +1324,17 @@ tcp_alloc(u8_t prio)
   struct tcp_pcb *pcb;
   u32_t iss;
   
-  pcb = (struct tcp_pcb *)memp_malloc(MEMP_TCP_PCB);
-  if (pcb == NULL) {
+  pcb = (struct tcp_pcb *)memp_malloc(MEMP_TCP_PCB);    //申请一个内存池空间
+  if (pcb == NULL) {    //如果申请失败
     /* Try killing oldest connection in TIME-WAIT. */
     LWIP_DEBUGF(TCP_DEBUG, ("tcp_alloc: killing off oldest TIME-WAIT connection\n"));
-    tcp_kill_timewait();
-    /* Try to allocate a tcp_pcb again. */
+    tcp_kill_timewait();    //试图释放处于timewait状态的控制块
+    /* Try to allocate a tcp_pcb again. 再次尝试申请控制块内存池空间*/
     pcb = (struct tcp_pcb *)memp_malloc(MEMP_TCP_PCB);
-    if (pcb == NULL) {
+    if (pcb == NULL) {  //如果还申请失败
       /* Try killing active connections with lower priority than the new one. */
       LWIP_DEBUGF(TCP_DEBUG, ("tcp_alloc: killing connection with prio lower than %d\n", prio));
-      tcp_kill_prio(prio);
+      tcp_kill_prio(prio);  //回收优先级较低的控制块
       /* Try to allocate a tcp_pcb again. */
       pcb = (struct tcp_pcb *)memp_malloc(MEMP_TCP_PCB);
       if (pcb != NULL) {
@@ -1303,35 +1347,36 @@ tcp_alloc(u8_t prio)
       MEMP_STATS_DEC(err, MEMP_TCP_PCB);
     }
   }
+  //如果申请内存池空间成功
   if (pcb != NULL) {
-    memset(pcb, 0, sizeof(struct tcp_pcb));
-    pcb->prio = prio;
-    pcb->snd_buf = TCP_SND_BUF;
-    pcb->snd_queuelen = 0;
-    pcb->rcv_wnd = TCP_WND;
-    pcb->rcv_ann_wnd = TCP_WND;
-    pcb->tos = 0;
-    pcb->ttl = TCP_TTL;
+    memset(pcb, 0, sizeof(struct tcp_pcb)); //清零
+    pcb->prio = prio;   //设置控制块的优先级
+    pcb->snd_buf = TCP_SND_BUF; //可使用的发送缓冲区大小
+    pcb->snd_queuelen = 0;  //缓冲区已占用的pbuf个数
+    pcb->rcv_wnd = TCP_WND;     //接受窗口
+    pcb->rcv_ann_wnd = TCP_WND; //通告接受窗口
+    pcb->tos = 0;       //服务类型
+    pcb->ttl = TCP_TTL;     //tcp ttl
     /* As initial send MSS, we use TCP_MSS but limit it to 536.
        The send MSS is updated when an MSS option is received. */
-    pcb->mss = (TCP_MSS > 536) ? 536 : TCP_MSS;
-    pcb->rto = 3000 / TCP_SLOW_INTERVAL;
-    pcb->sa = 0;
+    pcb->mss = (TCP_MSS > 536) ? 536 : TCP_MSS;     //初始化最大报文段大小
+    pcb->rto = 3000 / TCP_SLOW_INTERVAL;    //初始化超时时间
+    pcb->sa = 0;                                                  //初始化与rtt估计相关字段
     pcb->sv = 3000 / TCP_SLOW_INTERVAL;
     pcb->rtime = -1;
-    pcb->cwnd = 1;
-    iss = tcp_next_iss();
-    pcb->snd_wl2 = iss;
+    pcb->cwnd = 1;                                          //初始化阻塞窗口
+    iss = tcp_next_iss();                                   //获取初始序列号
+    pcb->snd_wl2 = iss;                                   //初始化发送窗口相关字段
     pcb->snd_nxt = iss;
     pcb->lastack = iss;
-    pcb->snd_lbb = iss;   
-    pcb->tmr = tcp_ticks;
-    pcb->last_timer = tcp_timer_ctr;
+    pcb->snd_lbb = iss;     
+    pcb->tmr = tcp_ticks;                                 //记录控制块创建时的系统时间
+    pcb->last_timer = tcp_timer_ctr;                                           
 
-    pcb->polltmr = 0;
+    pcb->polltmr = 0;                                       //清空周期性事件的定时器
 
 #if LWIP_CALLBACK_API
-    pcb->recv = tcp_recv_null;
+    pcb->recv = tcp_recv_null;                      //注册接受数据的默认上层函数
 #endif /* LWIP_CALLBACK_API */  
     
     /* Init KEEPALIVE timer */

@@ -50,16 +50,16 @@ extern "C" {
 /* members are in network byte order */
 struct sockaddr_in {
   u8_t sin_len;
-  u8_t sin_family;	//协议蔟
-  u16_t sin_port;	//端口号
-  struct in_addr sin_addr;	//IP地址
-  char sin_zero[8];	//剩余未用字节
+  u8_t sin_family;
+  u16_t sin_port;
+  struct in_addr sin_addr;
+  char sin_zero[8];
 };
-/* 记录本地IP地址和端口号等信息 */
+
 struct sockaddr {
   u8_t sa_len;
-  u8_t sa_family;	//协议蔟
-  char sa_data[14];	//协议地址
+  u8_t sa_family;
+  char sa_data[14];
 };
 
 /* If your port already typedef's socklen_t, define SOCKLEN_T_DEFINED

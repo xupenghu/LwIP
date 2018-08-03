@@ -153,7 +153,7 @@ tcpip_thread(void *arg)
 
 /**
  * Pass a received packet to tcpip_thread for input processing
- * 像内核输入一个数据包消息
+ *
  * @param p the received packet, p->payload pointing to the Ethernet header or
  *          to an IP header (if inp doesn't have NETIF_FLAG_ETHARP or
  *          NETIF_FLAG_ETHERNET flags)
@@ -168,30 +168,30 @@ tcpip_input(struct pbuf *p, struct netif *inp)
   LOCK_TCPIP_CORE();
 #if LWIP_ETHERNET
   if (inp->flags & (NETIF_FLAG_ETHARP | NETIF_FLAG_ETHERNET)) {
-    ret = ethernet_input(p, inp); //如果是ARP或者更底层的网络包 调用底层函数处理
+    ret = ethernet_input(p, inp);
   } else
 #endif /* LWIP_ETHERNET */
   {
-    ret = ip_input(p, inp);	//否则调用IP层输入函数处理
+    ret = ip_input(p, inp);
   }
   UNLOCK_TCPIP_CORE();
   return ret;
 #else /* LWIP_TCPIP_CORE_LOCKING_INPUT */
   struct tcpip_msg *msg;
 
-  if (!sys_mbox_valid(&mbox)) { //如果系统邮箱无效
-    return ERR_VAL;	//直接返回
+  if (!sys_mbox_valid(&mbox)) {
+    return ERR_VAL;
   }
-  msg = (struct tcpip_msg *)memp_malloc(MEMP_TCPIP_MSG_INPKT);	//申请内存池空间
-  if (msg == NULL) {	//申请失败返回内存错误
+  msg = (struct tcpip_msg *)memp_malloc(MEMP_TCPIP_MSG_INPKT);
+  if (msg == NULL) {
     return ERR_MEM;
   }
 
-  msg->type = TCPIP_MSG_INPKT;	//数据包消息类型
-  msg->msg.inp.p = p;	//初始化消息结构中的msg共用体inp字段
+  msg->type = TCPIP_MSG_INPKT;
+  msg->msg.inp.p = p;
   msg->msg.inp.netif = inp;
-  if (sys_mbox_trypost(&mbox, msg) != ERR_OK) {	//向系统邮箱投递消息
-    memp_free(MEMP_TCPIP_MSG_INPKT, msg);	//失败则删除消息结构
+  if (sys_mbox_trypost(&mbox, msg) != ERR_OK) {
+    memp_free(MEMP_TCPIP_MSG_INPKT, msg);
     return ERR_MEM;
   }
   return ERR_OK;
@@ -300,8 +300,7 @@ tcpip_untimeout(sys_timeout_handler h, void *arg)
  * Call the lower part of a netconn_* function
  * This function is then running in the thread context
  * of tcpip_thread and has exclusive access to lwIP core code.
- * 向内核投递一个api消息 等待内核执行 注意：这个函数会被用户进程netconn_xxx函数所调用
- * 这是两个进程间的通讯
+ *
  * @param apimsg a struct containing the function to call and its parameters
  * @return ERR_OK if the function was called, another err_t if not
  */
@@ -314,11 +313,11 @@ tcpip_apimsg(struct api_msg *apimsg)
   apimsg->msg.err = ERR_VAL;
 #endif
   
-  if (sys_mbox_valid(&mbox)) {	//如果邮箱存在
-    msg.type = TCPIP_MSG_API;	//构造消息
+  if (sys_mbox_valid(&mbox)) {
+    msg.type = TCPIP_MSG_API;
     msg.msg.apimsg = apimsg;
     sys_mbox_post(&mbox, &msg);
-    sys_arch_sem_wait(&apimsg->msg.conn->op_completed, 0);	//等待消息处理完毕
+    sys_arch_sem_wait(&apimsg->msg.conn->op_completed, 0);
     return apimsg->msg.err;
   }
   return ERR_VAL;

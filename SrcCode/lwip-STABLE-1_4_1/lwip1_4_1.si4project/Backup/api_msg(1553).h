@@ -59,31 +59,30 @@ extern "C" {
 /** This struct includes everything that is necessary to execute a function
     for a netconn in another thread context (mainly used to process netconns
     in the tcpip_thread context to be thread safe). */
-/* 注意： 这个结构体专门用于描述api_msg的参数 */
 struct api_msg_msg {
   /** The netconn which to process - always needed: it includes the semaphore
       which is used to block the application thread until the function finished. */
-  struct netconn *conn;		//与消息相关的当前连接，该字段对任何调用都是必须的
+  struct netconn *conn;
   /** The return value of the function executed in tcpip_thread. */
-  err_t err;	//用于记录内核回调执行后的结果
+  err_t err;
   /** Depending on the executed function, one of these union members is used */
   union {
     /** used for do_send */
-    struct netbuf *b;	//执行do_send时需要的参数 表示待发送的数据
+    struct netbuf *b;
     /** used for do_newconn */
     struct {
-      u8_t proto;	//待连接时的参数 执行do_newconn
+      u8_t proto;
     } n;
     /** used for do_bind and do_connect */
     struct {
-      ip_addr_t *ipaddr;	//IP地址
-      u16_t port;			//端口号
+      ip_addr_t *ipaddr;
+      u16_t port;
     } bc;
-    /** used for do_getaddr 应用程序希望获取的IP地址和端口号 */
+    /** used for do_getaddr */
     struct {
-      ip_addr_t *ipaddr;	//
+      ip_addr_t *ipaddr;
       u16_t *port;
-      u8_t local;	//1：希望获取本地IP地址和端口号 0：希望获取目的IP地址和端口号
+      u8_t local;
     } ad;
     /** used for do_write */
     struct {
@@ -121,12 +120,11 @@ struct api_msg_msg {
 /** This struct contains a function to execute in another thread context and
     a struct api_msg_msg that serves as an argument for this function.
     This is passed to tcpip_apimsg to execute functions in tcpip_thread context. */
-/* api_msg 由两部分构成 1、希望内核执行的api函数do_xxxx 2、执行do_xxx函数时的参数msg*/
 struct api_msg {
   /** function to execute in tcpip_thread context */
-  void (* function)(struct api_msg_msg *msg);	//指向do_xxx函数
+  void (* function)(struct api_msg_msg *msg);
   /** arguments for this function */
-  struct api_msg_msg msg;	//执行do_xxx函数时调用的参数
+  struct api_msg_msg msg;
 };
 
 #if LWIP_DNS

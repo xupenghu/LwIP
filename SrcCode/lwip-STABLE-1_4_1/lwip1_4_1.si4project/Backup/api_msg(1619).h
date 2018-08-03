@@ -79,11 +79,11 @@ struct api_msg_msg {
       ip_addr_t *ipaddr;	//IP地址
       u16_t port;			//端口号
     } bc;
-    /** used for do_getaddr 应用程序希望获取的IP地址和端口号 */
+    /** used for do_getaddr */
     struct {
       ip_addr_t *ipaddr;	//
       u16_t *port;
-      u8_t local;	//1：希望获取本地IP地址和端口号 0：希望获取目的IP地址和端口号
+      u8_t local;
     } ad;
     /** used for do_write */
     struct {

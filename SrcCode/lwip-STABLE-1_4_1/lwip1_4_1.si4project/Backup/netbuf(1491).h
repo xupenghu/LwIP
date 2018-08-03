@@ -44,12 +44,11 @@ extern "C" {
 #define NETBUF_FLAG_DESTADDR    0x01
 /** This netbuf includes a checksum */
 #define NETBUF_FLAG_CHKSUM      0x02
-/* 用户数据缓冲结构 */
+
 struct netbuf {
-  struct pbuf *p ;	//指向用户数据pbuf 注意：该p一直指向pbuf的第一个pbuf结构
-  struct pbuf *ptr;	//可能指向链表中的pbuf其他结构
-  ip_addr_t addr;	//ip地址
-  u16_t port;		//端口号
+  struct pbuf *p, *ptr;
+  ip_addr_t addr;
+  u16_t port;
 #if LWIP_NETBUF_RECVINFO || LWIP_CHECKSUM_ON_COPY
 #if LWIP_CHECKSUM_ON_COPY
   u8_t flags;
