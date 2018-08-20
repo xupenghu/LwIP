@@ -1138,9 +1138,9 @@ int
 lwip_select(int maxfdp1, fd_set *readset, fd_set *writeset, fd_set *exceptset,
             struct timeval *timeout)
 {
-  u32_t waitres = 0; //记录select等待的时间
+  u32_t waitres = 0;
   int nready;
-  fd_set lreadset, lwriteset, lexceptset; //用于记录有事件发生时的套接字
+  fd_set lreadset, lwriteset, lexceptset;
   u32_t msectimeout;
   struct lwip_select_cb select_cb;
   err_t err;
@@ -1154,13 +1154,11 @@ lwip_select(int maxfdp1, fd_set *readset, fd_set *writeset, fd_set *exceptset,
 
   /* Go through each socket in each list to count number of sockets which
      currently match */
-  /* 检测指定的套接字集合上是否有事件发生 */  
   nready = lwip_selscan(maxfdp1, readset, writeset, exceptset, &lreadset, &lwriteset, &lexceptset);
 
   /* If we don't have any current events, then suspend if we are supposed to */
-  /* 如果没有检测到任何事件*/
   if (!nready) {
-    if (timeout && timeout->tv_sec == 0 && timeout->tv_usec == 0) { //如果设置的阻塞时间为0，则直接退出
+    if (timeout && timeout->tv_sec == 0 && timeout->tv_usec == 0) {
       LWIP_DEBUGF(SOCKETS_DEBUG, ("lwip_select: no timeout, returning 0\n"));
       /* This is OK as the local fdsets are empty and nready is zero,
          or we would have returned earlier. */
@@ -1171,7 +1169,7 @@ lwip_select(int maxfdp1, fd_set *readset, fd_set *writeset, fd_set *exceptset,
        We don't actually need any dynamic memory. Our entry on the
        list is only valid while we are in this function, so it's ok
        to use local variables. */
-	/* 需要阻塞 则初始化一个lwip_select_cb结构 */
+
     select_cb.next = NULL;
     select_cb.prev = NULL;
     select_cb.readset = readset;

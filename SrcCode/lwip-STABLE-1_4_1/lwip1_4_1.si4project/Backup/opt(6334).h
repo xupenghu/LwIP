@@ -63,7 +63,6 @@
 /** 
  * NO_SYS==1: Provides VERY minimal functionality. Otherwise,
  * use lwIP facilities.
- * 移植中是否包含操作系统模拟层，裸机移植时该值需为1
  */
 #ifndef NO_SYS
 #define NO_SYS                          0
@@ -72,7 +71,6 @@
 /**
  * NO_SYS_NO_TIMERS==1: Drop support for sys_timeout when NO_SYS==1
  * Mainly for compatibility to old versions.
- * 
  */
 #ifndef NO_SYS_NO_TIMERS
 #define NO_SYS_NO_TIMERS                0
@@ -103,7 +101,6 @@
  * MEM_LIBC_MALLOC==1: Use malloc/free/realloc provided by your C-library
  * instead of the lwip internal allocator. Can save code size if you
  * already use it.
- * 用c库的内存分配方式进行内存堆分配，通常为0 即使用lwip提供的内存分配方式
  */
 #ifndef MEM_LIBC_MALLOC
 #define MEM_LIBC_MALLOC                 0
@@ -122,7 +119,6 @@
  * MEM_ALIGNMENT: should be set to the alignment of the CPU
  *    4 byte alignment -> #define MEM_ALIGNMENT 4
  *    2 byte alignment -> #define MEM_ALIGNMENT 2
- *    处理器字节对齐数，对于32位处理器来说，通常为4
  */
 #ifndef MEM_ALIGNMENT
 #define MEM_ALIGNMENT                   1
@@ -131,7 +127,6 @@
 /**
  * MEM_SIZE: the size of the heap memory. If the application will send
  * a lot of data that needs to be copied, this should be set high.
- * 系统内存堆总大小，若系统内存足够，可加大该值至数十K
  */
 #ifndef MEM_SIZE
 #define MEM_SIZE                        1600
@@ -154,7 +149,6 @@
  *    MEMP_OVERFLOW_CHECK == 1 checks each element when it is freed
  *    MEMP_OVERFLOW_CHECK >= 2 checks each element in every pool every time
  *      memp_malloc() or memp_free() is called (useful but slow!)
- * 检测内存池内存是否异常，通常为0 不检测
  */
 #ifndef MEMP_OVERFLOW_CHECK
 #define MEMP_OVERFLOW_CHECK             0
@@ -163,7 +157,6 @@
 /**
  * MEMP_SANITY_CHECK==1: run a sanity check after each memp_free() to make
  * sure that there are no cycles in the linked lists.
- * 检测内存池链表是否异常，通常为0 不检测
  */
 #ifndef MEMP_SANITY_CHECK
 #define MEMP_SANITY_CHECK               0
@@ -174,7 +167,6 @@
  * of memory pools of various sizes. When mem_malloc is called, an element of
  * the smallest pool that can provide the length needed is returned.
  * To use this, MEMP_USE_CUSTOM_POOLS also has to be enabled.
- * 用内存池的方式分配内存堆
  */
 #ifndef MEM_USE_POOLS
 #define MEM_USE_POOLS                   0
@@ -183,9 +175,7 @@
 /**
  * MEM_USE_POOLS_TRY_BIGGER_POOL==1: if one malloc-pool is empty, try the next
  * bigger pool - WARNING: THIS MIGHT WASTE MEMORY but it can make a system more
- * reliable.
- * 
- */
+ * reliable. */
 #ifndef MEM_USE_POOLS_TRY_BIGGER_POOL
 #define MEM_USE_POOLS_TRY_BIGGER_POOL   0
 #endif
@@ -195,7 +185,6 @@
  * that defines additional pools beyond the "standard" ones required
  * by lwIP. If you set this to 1, you must have lwippools.h in your 
  * inlude path somewhere. 
- * 用户是否使用自定义内存池
  */
 #ifndef MEMP_USE_CUSTOM_POOLS
 #define MEMP_USE_CUSTOM_POOLS           0
@@ -232,7 +221,6 @@
  * MEMP_NUM_PBUF: the number of memp struct pbufs (used for PBUF_ROM and PBUF_REF).
  * If the application sends a lot of data out of ROM (or other static memory),
  * this should be set high.
- * 数据包pbuf首部数目，当应用数据较多时，应该加大该值。
  */
 #ifndef MEMP_NUM_PBUF
 #define MEMP_NUM_PBUF                   16
@@ -241,7 +229,6 @@
 /**
  * MEMP_NUM_RAW_PCB: Number of raw connection PCBs
  * (requires the LWIP_RAW option)
- * 原始控制块个数，不使用时应该减小该值
  */
 #ifndef MEMP_NUM_RAW_PCB
 #define MEMP_NUM_RAW_PCB                4
@@ -251,7 +238,6 @@
  * MEMP_NUM_UDP_PCB: the number of UDP protocol control blocks. One
  * per active UDP "connection".
  * (requires the LWIP_UDP option)
- * UDP控制块个数，不使用时应当减小该值
  */
 #ifndef MEMP_NUM_UDP_PCB
 #define MEMP_NUM_UDP_PCB                4
@@ -260,7 +246,6 @@
 /**
  * MEMP_NUM_TCP_PCB: the number of simulatenously active TCP connections.
  * (requires the LWIP_TCP option)
- * TCP控制块个数，不使用时应该减小该值
  */
 #ifndef MEMP_NUM_TCP_PCB
 #define MEMP_NUM_TCP_PCB                5
@@ -269,7 +254,6 @@
 /**
  * MEMP_NUM_TCP_PCB_LISTEN: the number of listening TCP connections.
  * (requires the LWIP_TCP option)
- * 处于listen状态的tcp控制块个数，根据使用条件来决定该值的大小
  */
 #ifndef MEMP_NUM_TCP_PCB_LISTEN
 #define MEMP_NUM_TCP_PCB_LISTEN         8
@@ -278,7 +262,6 @@
 /**
  * MEMP_NUM_TCP_SEG: the number of simultaneously queued TCP segments.
  * (requires the LWIP_TCP option)
- * tcp内核的缓冲报文段个数，当应用数据较多时应适当加大该值
  */
 #ifndef MEMP_NUM_TCP_SEG
 #define MEMP_NUM_TCP_SEG                16
@@ -287,7 +270,6 @@
 /**
  * MEMP_NUM_REASSDATA: the number of IP packets simultaneously queued for
  * reassembly (whole packets, not fragments!)
- * IP报文段缓冲无序报文段的数目，当网络较差或应用数据较多时，应当加大该值
  */
 #ifndef MEMP_NUM_REASSDATA
 #define MEMP_NUM_REASSDATA              5
@@ -309,7 +291,6 @@
  * packets (pbufs) that are waiting for an ARP request (to resolve
  * their destination address) to finish.
  * (requires the ARP_QUEUEING option)
- * ARP表项中可缓冲的待发送pbuf最大个数
  */
 #ifndef MEMP_NUM_ARP_QUEUE
 #define MEMP_NUM_ARP_QUEUE              30
@@ -320,7 +301,6 @@
  * can be members et the same time (one per netif - allsystems group -, plus one
  * per netif membership).
  * (requires the LWIP_IGMP option)
- * 最大支持的IGMP个数
  */
 #ifndef MEMP_NUM_IGMP_GROUP
 #define MEMP_NUM_IGMP_GROUP             8
@@ -331,7 +311,6 @@
  * (requires NO_SYS==0)
  * The default number of timeouts is calculated here for all enabled modules.
  * The formula expects settings to be either '0' or '1'.
- * 内核定时结构，该值由内核自动计算
  */
 #ifndef MEMP_NUM_SYS_TIMEOUT
 #define MEMP_NUM_SYS_TIMEOUT            (LWIP_TCP + IP_REASSEMBLY + LWIP_ARP + (2*LWIP_DHCP) + LWIP_AUTOIP + LWIP_IGMP + LWIP_DNS + PPP_SUPPORT)
@@ -340,7 +319,6 @@
 /**
  * MEMP_NUM_NETBUF: the number of struct netbufs.
  * (only needed if you use the sequential API, like api_lib.c)
- * 上层API可以使用的netbuf数据包数目，当应用数据较多时可以加大该值。
  */
 #ifndef MEMP_NUM_NETBUF
 #define MEMP_NUM_NETBUF                 2
@@ -349,7 +327,6 @@
 /**
  * MEMP_NUM_NETCONN: the number of struct netconns.
  * (only needed if you use the sequential API, like api_lib.c)
- * 上层API可以使用的连接控制块的个数，包括所有的udp连接和tcp连接
  */
 #ifndef MEMP_NUM_NETCONN
 #define MEMP_NUM_NETCONN                4
@@ -359,7 +336,6 @@
  * MEMP_NUM_TCPIP_MSG_API: the number of struct tcpip_msg, which are used
  * for callback/timeout API communication. 
  * (only needed if you use tcpip.c)
- * 内核API事件的最大个数，当应用程序较多时应加大该值
  */
 #ifndef MEMP_NUM_TCPIP_MSG_API
 #define MEMP_NUM_TCPIP_MSG_API          8
@@ -369,7 +345,6 @@
  * MEMP_NUM_TCPIP_MSG_INPKT: the number of struct tcpip_msg, which are used
  * for incoming packets. 
  * (only needed if you use tcpip.c)
- * 发往内核进程的最大数据包个数
  */
 #ifndef MEMP_NUM_TCPIP_MSG_INPKT
 #define MEMP_NUM_TCPIP_MSG_INPKT        8
@@ -434,7 +409,6 @@
 
 /**
  * PBUF_POOL_SIZE: the number of buffers in the pbuf pool. 
- * pool类型的pbuf数据包的个数，建议在驱动接收中使用该类型的pbuf数据包，并且加大该值
  */
 #ifndef PBUF_POOL_SIZE
 #define PBUF_POOL_SIZE                  16
@@ -447,7 +421,6 @@
 */
 /**
  * LWIP_ARP==1: Enable ARP functionality.
- * 允许arp功能
  */
 #ifndef LWIP_ARP
 #define LWIP_ARP                        1
@@ -455,7 +428,6 @@
 
 /**
  * ARP_TABLE_SIZE: Number of active MAC-IP address pairs cached.
- * arp路由表个数，在大型网络环境中建议增大该值
  */
 #ifndef ARP_TABLE_SIZE
 #define ARP_TABLE_SIZE                  10
@@ -467,7 +439,6 @@
  * This is sufficient for most protocols and mainly reduces TCP connection
  * startup time. Set this to 1 if you know your application sends more than one
  * packet in a row to an IP address that is not in the ARP cache.
- * 是否允许arp解析成功之前缓冲多个数据包
  */
 #ifndef ARP_QUEUEING
 #define ARP_QUEUEING                    0
@@ -482,7 +453,6 @@
  * the peer is not already in the ARP table, adding a little latency.
  * The peer *is* in the ARP table if it requested our address before.
  * Also notice that this slows down input processing of every IP packet!
- * 是否根据接收到的IP包中的地址信息更新arp表
  */
 #ifndef ETHARP_TRUST_IP_MAC
 #define ETHARP_TRUST_IP_MAC             0
@@ -518,7 +488,6 @@
 
 /** ETHARP_SUPPORT_STATIC_ENTRIES==1: enable code to support static ARP table
  * entries (using etharp_add_static_entry/etharp_remove_static_entry).
- * 是否支持静态arp表
  */
 #ifndef ETHARP_SUPPORT_STATIC_ENTRIES
 #define ETHARP_SUPPORT_STATIC_ENTRIES   0
@@ -534,7 +503,6 @@
  * IP_FORWARD==1: Enables the ability to forward IP packets across network
  * interfaces. If you are going to run lwIP on a device with only one network
  * interface, define this to 0.
- * 是否支持多网络接口下的数据包转发 通常为0
  */
 #ifndef IP_FORWARD
 #define IP_FORWARD                      0
@@ -544,7 +512,6 @@
  * IP_OPTIONS_ALLOWED: Defines the behavior for IP options.
  *      IP_OPTIONS_ALLOWED==0: All packets with IP options are dropped.
  *      IP_OPTIONS_ALLOWED==1: IP options are allowed (but not parsed).
- * 是否允许IP数据报首部包含选项字段
  */
 #ifndef IP_OPTIONS_ALLOWED
 #define IP_OPTIONS_ALLOWED              1
@@ -554,7 +521,6 @@
  * IP_REASSEMBLY==1: Reassemble incoming fragmented IP packets. Note that
  * this option does not affect outgoing packet sizes, which can be controlled
  * via IP_FRAG.
- * 是否支持IP数据报重组
  */
 #ifndef IP_REASSEMBLY
 #define IP_REASSEMBLY                   1
@@ -564,7 +530,6 @@
  * IP_FRAG==1: Fragment outgoing IP packets if their size exceeds MTU. Note
  * that this option does not affect incoming packet sizes, which can be
  * controlled via IP_REASSEMBLY.
- * 发送IP数据报时是否支持分片
  */
 #ifndef IP_FRAG
 #define IP_FRAG                         1
@@ -574,7 +539,6 @@
  * IP_REASS_MAXAGE: Maximum time (in multiples of IP_TMR_INTERVAL - so seconds, normally)
  * a fragmented IP packet waits for all fragments to arrive. If not all fragments arrived
  * in this time, the whole packet is discarded.
- * 对某个分片的IP数据报进行重组的最大时间
  */
 #ifndef IP_REASS_MAXAGE
 #define IP_REASS_MAXAGE                 3
@@ -611,7 +575,6 @@
 
 /**
  * IP_DEFAULT_TTL: Default value for Time-To-Live used by transport layers.
- * IP数据报首部中的TTL值
  */
 #ifndef IP_DEFAULT_TTL
 #define IP_DEFAULT_TTL                  255
@@ -662,7 +625,6 @@
 /**
  * LWIP_ICMP==1: Enable ICMP module inside the IP stack.
  * Be careful, disable that make your product non-compliant to RFC1122
- * 是否允许icmp功能
  */
 #ifndef LWIP_ICMP
 #define LWIP_ICMP                       1
@@ -696,7 +658,6 @@
 */
 /**
  * LWIP_RAW==1: Enable application layer to hook into the IP layer itself.
- * 是否允许原始连接控制功能
  */
 #ifndef LWIP_RAW
 #define LWIP_RAW                        1
@@ -716,7 +677,6 @@
 */
 /**
  * LWIP_DHCP==1: Enable DHCP module.
- * 是否允许DHCP功能
  */
 #ifndef LWIP_DHCP
 #define LWIP_DHCP                       0
@@ -853,7 +813,6 @@
 /**
  * LWIP_DNS==1: Turn on DNS module. UDP must be available for DNS
  * transport.
- * 是否允许dns功能
  */
 #ifndef LWIP_DNS
 #define LWIP_DNS                        0
@@ -911,7 +870,6 @@
 */
 /**
  * LWIP_UDP==1: Turn on UDP.
- * 是否允许udp功能
  */
 #ifndef LWIP_UDP
 #define LWIP_UDP                        1
@@ -919,7 +877,6 @@
 
 /**
  * LWIP_UDPLITE==1: Turn on UDP-Lite. (Requires LWIP_UDP)
- * 是否允许udplite功能
  */
 #ifndef LWIP_UDPLITE
 #define LWIP_UDPLITE                    0
@@ -946,7 +903,6 @@
 */
 /**
  * LWIP_TCP==1: Turn on TCP.
- * 是否允许tcp功能
  */
 #ifndef LWIP_TCP
 #define LWIP_TCP                        1
@@ -962,7 +918,6 @@
 /**
  * TCP_WND: The size of a TCP window.  This must be at least 
  * (2 * TCP_MSS) for things to work well
- * tcp发送窗口大小 默认为4个报文段大小
  */
 #ifndef TCP_WND
 #define TCP_WND                         (4 * TCP_MSS)
@@ -970,7 +925,6 @@
 
 /**
  * TCP_MAXRTX: Maximum number of retransmissions of data segments.
- * tcp数据重发最大次数
  */
 #ifndef TCP_MAXRTX
 #define TCP_MAXRTX                      12
@@ -978,7 +932,6 @@
 
 /**
  * TCP_SYNMAXRTX: Maximum number of retransmissions of SYN segments.
- * 客户端sync请求重发最大次数
  */
 #ifndef TCP_SYNMAXRTX
 #define TCP_SYNMAXRTX                   6
@@ -987,7 +940,6 @@
 /**
  * TCP_QUEUE_OOSEQ==1: TCP will queue segments that arrive out of order.
  * Define to 0 if your device is low on memory.
- * tcp是否缓冲接收到的无序报文段
  */
 #ifndef TCP_QUEUE_OOSEQ
 #define TCP_QUEUE_OOSEQ                 (LWIP_TCP)
@@ -999,7 +951,6 @@
  * For the receive side, this MSS is advertised to the remote side
  * when opening a connection. For the transmit size, this MSS sets
  * an upper limit on the MSS advertised by the remote host.
- * tcp最大报文段大小
  */
 #ifndef TCP_MSS
 #define TCP_MSS                         536
@@ -1021,7 +972,6 @@
 /**
  * TCP_SND_BUF: TCP sender buffer space (bytes).
  * To achieve good performance, this should be at least 2 * TCP_MSS.
- * tcp发送缓冲区的大小 增大该值可以提高tcp性能
  */
 #ifndef TCP_SND_BUF
 #define TCP_SND_BUF                     (2 * TCP_MSS)
@@ -1030,7 +980,6 @@
 /**
  * TCP_SND_QUEUELEN: TCP sender buffer space (pbufs). This must be at least
  * as much as (2 * TCP_SND_BUF/TCP_MSS) for things to work.
- * tcp发送缓冲区队列最大长度 由内核自动计算
  */
 #ifndef TCP_SND_QUEUELEN
 #define TCP_SND_QUEUELEN                ((4 * (TCP_SND_BUF) + (TCP_MSS - 1))/(TCP_MSS))
@@ -1040,7 +989,6 @@
  * TCP_SNDLOWAT: TCP writable space (bytes). This must be less than
  * TCP_SND_BUF. It is the amount of space which must be available in the
  * TCP snd_buf for select to return writable (combined with TCP_SNDQUEUELOWAT).
- * tcp
  */
 #ifndef TCP_SNDLOWAT
 #define TCP_SNDLOWAT                    LWIP_MIN(LWIP_MAX(((TCP_SND_BUF)/2), (2 * TCP_MSS) + 1), (TCP_SND_BUF) - 1)
@@ -1100,7 +1048,6 @@
  * 128:       Limit the pbuf/memory overhead to 20%.
  * TCP_MSS:   Try to create unfragmented TCP packets.
  * TCP_MSS/4: Try to create 4 fragments or less per TCP packet.
- * tcp 发送缓冲队列预留额外空间 建议为0
  */
 #ifndef TCP_OVERSIZE
 #define TCP_OVERSIZE                    TCP_MSS
@@ -1129,8 +1076,8 @@
  *         for the event. This is the default.
  */
 #if !defined(LWIP_EVENT_API) && !defined(LWIP_CALLBACK_API)
-#define LWIP_EVENT_API                  0	//内核与用户程序交互，通过事件的方式，默认为0
-#define LWIP_CALLBACK_API               1	//同上
+#define LWIP_EVENT_API                  0
+#define LWIP_CALLBACK_API               1
 #endif
 
 
@@ -1289,7 +1236,6 @@
 */
 /**
  * TCPIP_THREAD_NAME: The name assigned to the main tcpip thread.
- * 内核任务名称
  */
 #ifndef TCPIP_THREAD_NAME
 #define TCPIP_THREAD_NAME              "tcpip_thread"
@@ -1932,8 +1878,6 @@
  * LWIP_DBG_MIN_LEVEL: After masking, the value of the debug is
  * compared against this value. If it is smaller, then debugging
  * messages are written.
- * 各个模块日志输出控制开关，当定义为LWIP_DBG_OFF时，该模块的调试日志不会被内核输出
- * 当定义为LWIP_DBG_ON时，则允许该模块输出调试日志
  */
 #ifndef LWIP_DBG_MIN_LEVEL
 #define LWIP_DBG_MIN_LEVEL              LWIP_DBG_LEVEL_ALL

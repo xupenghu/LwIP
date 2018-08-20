@@ -57,8 +57,6 @@
  * Once a hostname has been resolved (or found to be non-existent),
  * the resolver code calls a specified callback function (which 
  * must be implemented by the module that uses the resolver).
- * dns使用udp协议传输，他会访问 
- *
  */
 
 /*-----------------------------------------------------------------------------
@@ -930,12 +928,9 @@ dns_enqueue(const char *name, dns_found_callback found, void *callback_arg)
  * @param addr pointer to a ip_addr_t where to store the address if it is already
  *             cached in the dns_table (only valid if ERR_OK is returned!)
  * @param found a callback function to be called on success, failure or timeout (only if
- *              ERR_INPROGRESS is returned!) 用户回调函数 当dns解析完成以后会回调该函数
+ *              ERR_INPROGRESS is returned!)
  * @param callback_arg argument to pass to the callback function
  * @return a err_t return code.
- * dns地址解析服务函数
- *
- *
  */
 err_t
 dns_gethostbyname(const char *hostname, ip_addr_t *addr, dns_found_callback found,

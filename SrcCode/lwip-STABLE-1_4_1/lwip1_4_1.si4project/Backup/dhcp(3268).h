@@ -152,23 +152,23 @@ void dhcp_fine_tmr(void);
 #define DHCP_COOKIE_OFS   DHCP_MSG_LEN
 #define DHCP_OPTIONS_OFS  (DHCP_MSG_LEN + 4)
 
-#define DHCP_CLIENT_PORT  68  //dhcp客户端端口号
-#define DHCP_SERVER_PORT  67  //dhcp服务器端口号
+#define DHCP_CLIENT_PORT  68  
+#define DHCP_SERVER_PORT  67
 
-/** DHCP client states dhcp客户端状态表*/
-#define DHCP_OFF          0		//初始状态
-#define DHCP_REQUESTING   1		//已发送的request请求报文
-#define DHCP_INIT         2		
+/** DHCP client states */
+#define DHCP_OFF          0
+#define DHCP_REQUESTING   1
+#define DHCP_INIT         2
 #define DHCP_REBOOTING    3
-#define DHCP_REBINDING    4		//租期87.5%已到 重发request报文
-#define DHCP_RENEWING     5		//租期50%已到，重发request报文
-#define DHCP_SELECTING    6   //已广播的discover报文
+#define DHCP_REBINDING    4
+#define DHCP_RENEWING     5
+#define DHCP_SELECTING    6
 #define DHCP_INFORMING    7
-#define DHCP_CHECKING     8	  //检测分配的IP地址是否可用
+#define DHCP_CHECKING     8
 #define DHCP_PERMANENT    9
-#define DHCP_BOUND        10	//IP地址可用 绑定到该地址
+#define DHCP_BOUND        10
 /** not yet implemented #define DHCP_RELEASING 11 */
-#define DHCP_BACKING_OFF  12	//收到NAK
+#define DHCP_BACKING_OFF  12
 
 /** AUTOIP cooperatation flags */
 #define DHCP_AUTOIP_COOP_STATE_OFF  0
