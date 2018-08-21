@@ -3,7 +3,7 @@
 ..\obj\oled.o: ..\SYSTEM\sys\sys.h
 ..\obj\oled.o: ..\USER\stm32f4xx.h
 ..\obj\oled.o: ..\CORE\core_cm4.h
-..\obj\oled.o: D:\Keil_v5\ARM\ARMCC\Bin\..\include\stdint.h
+..\obj\oled.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\stdint.h
 ..\obj\oled.o: ..\CORE\core_cmInstr.h
 ..\obj\oled.o: ..\CORE\core_cmFunc.h
 ..\obj\oled.o: ..\CORE\core_cm4_simd.h
@@ -36,6 +36,6 @@
 ..\obj\oled.o: ..\FWLIB\inc\stm32f4xx_dac.h
 ..\obj\oled.o: ..\FWLIB\inc\stm32f4xx_dcmi.h
 ..\obj\oled.o: ..\FWLIB\inc\stm32f4xx_fsmc.h
-..\obj\oled.o: D:\Keil_v5\ARM\ARMCC\Bin\..\include\stdlib.h
+..\obj\oled.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\stdlib.h
 ..\obj\oled.o: ..\HARDWARE\OLED\oledfont.h
 ..\obj\oled.o: ..\SYSTEM\delay\delay.h

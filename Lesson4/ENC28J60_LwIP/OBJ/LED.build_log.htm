@@ -1,0 +1,152 @@
+<html>
+<body>
+<pre>
+<h1>µVision Build Log</h1>
+<h2>Tool Versions:</h2>
+IDE-Version: ¦ÌVision V5.14.0.0
+Copyright (C) 2015 ARM Ltd and ARM Germany GmbH. All rights reserved.
+License Information: 123 youyou, 1122, LIC=JDAUH-W4BZV-XBZEC-7RNCN-ADNAS-13KYS
+ 
+Tool Versions:
+Toolchain:       MDK-ARM Professional  Version: 5.14.0.0
+Toolchain Path:  C:\Keil_v5\ARM\ARMCC\Bin
+C Compiler:      Armcc.exe V5.05 update 1 (build 106)
+Assembler:       Armasm.exe V5.05 update 1 (build 106)
+Linker/Locator:  ArmLink.exe V5.05 update 1 (build 106)
+Library Manager: ArmAr.exe V5.05 update 1 (build 106)
+Hex Converter:   FromElf.exe V5.05 update 1 (build 106)
+CPU DLL:         SARMCM3.DLL V5.14.0.0
+Dialog DLL:      DCM.DLL V1.13.1.0
+Target DLL:      Segger\JL2CM3.dll V2.99.13.0
+Dialog DLL:      TCM.DLL V1.14.4.0
+ 
+<h2>Project:</h2>
+C:\Users\youyou\Desktop\github\LwIP\Lesson4\ENC28J60_LwIP\USER\LED.uvprojx
+Project File Date:  08/21/2018
+
+<h2>Output:</h2>
+Build target 'LwIP'
+compiling main.c...
+compiling stm32f4xx_it.c...
+compiling system_stm32f4xx.c...
+compiling led.c...
+compiling spi.c...
+compiling enc28j60.c...
+compiling delay.c...
+compiling sys.c...
+compiling usart.c...
+compiling misc.c...
+compiling stm32f4xx_gpio.c...
+compiling stm32f4xx_rcc.c...
+compiling stm32f4xx_syscfg.c...
+compiling stm32f4xx_usart.c...
+compiling stm32f4xx_spi.c...
+compiling etharp.c...
+..\lwip-STABLE-1_4_1\src\netif\etharp.c(1360): warning:  #111-D: statement is unreachable
+          goto free_and_return;
+..\lwip-STABLE-1_4_1\src\netif\etharp.c: 1 warning, 0 errors
+compiling ethernetif.c...
+..\lwip-STABLE-1_4_1\src\netif\ethernetif.c(92): error:  #29: expected an expression
+    netif->hwaddr[0] = ;
+..\lwip-STABLE-1_4_1\src\netif\ethernetif.c(93): error:  #29: expected an expression
+    ...
+..\lwip-STABLE-1_4_1\src\netif\ethernetif.c(86): warning:  #177-D: variable "ethernetif" was declared but never referenced
+    struct ethernetif *ethernetif = netif->state;
+..\lwip-STABLE-1_4_1\src\netif\ethernetif.c(128): error:  #20: identifier "initiate" is undefined
+    initiate transfer();
+..\lwip-STABLE-1_4_1\src\netif\ethernetif.c(138): error:  #20: identifier "send" is undefined
+      send data from(q->payload, q->len);
+..\lwip-STABLE-1_4_1\src\netif\ethernetif.c(138): error:  #65: expected a ";"
+      send data from(q->payload, q->len);
+..\lwip-STABLE-1_4_1\src\netif\ethernetif.c(141): error:  #268: declaration may not appear after executable statement in block
+    signal that packet should be sent();
+..\lwip-STABLE-1_4_1\src\netif\ethernetif.c(141): error:  #20: identifier "signal" is undefined
+    signal that packet should be sent();
+..\lwip-STABLE-1_4_1\src\netif\ethernetif.c(141): error:  #65: expected a ";"
+    signal that packet should be sent();
+..\lwip-STABLE-1_4_1\src\netif\ethernetif.c(125): warning:  #177-D: variable "ethernetif" was declared but never referenced
+    struct ethernetif *ethernetif = netif->state;
+..\lwip-STABLE-1_4_1\src\netif\ethernetif.c(169): error:  #29: expected an expression
+    len = ;
+..\lwip-STABLE-1_4_1\src\netif\ethernetif.c(195): error:  #20: identifier "read" is undefined
+        read data into(q->payload, q->len);
+..\lwip-STABLE-1_4_1\src\netif\ethernetif.c(195): error:  #65: expected a ";"
+        read data into(q->payload, q->len);
+..\lwip-STABLE-1_4_1\src\netif\ethernetif.c(197): error:  #268: declaration may not appear after executable statement in block
+      acknowledge that packet has been read();
+..\lwip-STABLE-1_4_1\src\netif\ethernetif.c(197): error:  #20: identifier "acknowledge" is undefined
+      acknowledge that packet has been read();
+..\lwip-STABLE-1_4_1\src\netif\ethernetif.c(197): error:  #65: expected a ";"
+      acknowledge that packet has been read();
+..\lwip-STABLE-1_4_1\src\netif\ethernetif.c(205): error:  #20: identifier "drop" is undefined
+      drop packet();
+..\lwip-STABLE-1_4_1\src\netif\ethernetif.c(163): warning:  #177-D: variable "ethernetif" was declared but never referenced
+    struct ethernetif *ethernetif = netif->state;
+..\lwip-STABLE-1_4_1\src\netif\ethernetif.c(225): warning:  #550-D: variable "ethernetif" was set but never used
+    struct ethernetif *ethernetif;
+..\lwip-STABLE-1_4_1\src\netif\ethernetif.c(223): warning:  #177-D: function "ethernetif_input" was declared but never referenced
+  ethernetif_input(struct netif *netif)
+..\lwip-STABLE-1_4_1\src\netif\ethernetif.c: 5 warnings, 15 errors
+compiling slipif.c...
+compiling def.c...
+compiling dhcp.c...
+compiling dns.c...
+compiling init.c...
+compiling mem.c...
+compiling memp.c...
+compiling netif.c...
+compiling pbuf.c...
+..\lwip-STABLE-1_4_1\src\core\pbuf.c(233): warning:  #111-D: statement is unreachable
+      return NULL;
+..\lwip-STABLE-1_4_1\src\core\pbuf.c(341): warning:  #111-D: statement is unreachable
+      return NULL;
+..\lwip-STABLE-1_4_1\src\core\pbuf.c(392): warning:  #111-D: statement is unreachable
+      return NULL;
+..\lwip-STABLE-1_4_1\src\core\pbuf.c(572): warning:  #111-D: statement is unreachable
+      return 1;
+..\lwip-STABLE-1_4_1\src\core\pbuf.c: 4 warnings, 0 errors
+compiling raw.c...
+..\lwip-STABLE-1_4_1\src\core\raw.c(232): warning:  #111-D: statement is unreachable
+        return ERR_MEM;
+..\lwip-STABLE-1_4_1\src\core\raw.c: 1 warning, 0 errors
+compiling stats.c...
+compiling sys.c...
+compiling tcp.c...
+compiling tcp_in.c...
+compiling tcp_out.c...
+compiling timers.c...
+compiling udp.c...
+..\lwip-STABLE-1_4_1\src\core\udp.c(354): warning:  #111-D: statement is unreachable
+        UDP_STATS_INC(udp.drop);
+..\lwip-STABLE-1_4_1\src\core\udp.c: 1 warning, 0 errors
+compiling autoip.c...
+compiling icmp.c...
+..\lwip-STABLE-1_4_1\src\core\ipv4\icmp.c(154): warning:  #111-D: statement is unreachable
+          goto memerr;
+..\lwip-STABLE-1_4_1\src\core\ipv4\icmp.c(167): warning:  #111-D: statement is unreachable
+          goto memerr;
+..\lwip-STABLE-1_4_1\src\core\ipv4\icmp.c(173): warning:  #111-D: statement is unreachable
+          goto memerr;
+..\lwip-STABLE-1_4_1\src\core\ipv4\icmp.c(183): warning:  #111-D: statement is unreachable
+          goto memerr;
+..\lwip-STABLE-1_4_1\src\core\ipv4\icmp.c: 4 warnings, 0 errors
+compiling igmp.c...
+compiling inet.c...
+compiling inet_chksum.c...
+compiling ip.c...
+compiling ip_addr.c...
+..\lwip-STABLE-1_4_1\src\core\ipv4\ip_addr.c(244): warning:  #111-D: statement is unreachable
+      break;
+..\lwip-STABLE-1_4_1\src\core\ipv4\ip_addr.c: 1 warning, 0 errors
+compiling ip_frag.c...
+"..\OBJ\LED.axf" - 15 Error(s), 17 Warning(s).
+
+<h2>Collection of Component include folders:</h2>
+  C:\Users\youyou\Desktop\github\LwIP\Lesson4\ENC28J60_LwIP\USER\RTE
+  C:\Keil_v5\ARM\PACK\Keil\STM32F4xx_DFP\2.7.0
+
+<h2>Collection of Component Files used:</h2>
+Target not created.
+</pre>
+</body>
+</html>

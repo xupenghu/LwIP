@@ -1,0 +1,7 @@
+-c --cpu Cortex-M4.fp -g -O0 --apcs=interwork --split_sections -I..\CORE -I..\SYSTEM\delay -I..\SYSTEM\sys -I..\SYSTEM\usart -I..\USER -I..\HARDWARE\LED -I..\FWLIB\inc -I..\HARDWARE\ENC28J60 -I..\HARDWARE\SPI -I..\lwip-STABLE-1_4_1\src\api -I..\lwip-STABLE-1_4_1\src\arch -I..\lwip-STABLE-1_4_1\src\include -I..\lwip-STABLE-1_4_1\src\netif -I..\lwip-STABLE-1_4_1\src\include\ipv4 -I..\lwip-STABLE-1_4_1\src
+-I C:\Users\youyou\Desktop\github\LwIP\Lesson4\ENC28J60_LwIP\USER\RTE
+-I C:\Keil_v5\ARM\PACK\Keil\STM32F4xx_DFP\2.7.0
+-I C:\Keil_v5\ARM\CMSIS\Include
+-I C:\Keil_v5\ARM\PACK\Keil\STM32F4xx_DFP\2.7.0\Device\Include
+-D__UVISION_VERSION="514" -DSTM32F407xx -DSTM32F40_41xxx -DUSE_STDPERIPH_DRIVER
+-o ..\obj\ethernetif.o --omf_browse ..\obj\ethernetif.crf --depend ..\obj\ethernetif.d "..\lwip-STABLE-1_4_1\src\netif\ethernetif.c"

@@ -45,6 +45,8 @@
 
 static void OledDelay(unsigned int cnt)
 {
+    uint32_t n;
+    n = cnt;
 	delay_us(cnt);
 }
 
@@ -53,6 +55,7 @@ void IIC_Start()
 
 	OLED_SCLK_Set() ;
 	OLED_SDIN_Set();
+    OledDelay(1);
 	OLED_SDIN_Clr();
 	OLED_SCLK_Clr();
 }
@@ -65,6 +68,7 @@ void IIC_Stop()
 OLED_SCLK_Set() ;
 //	OLED_SCLK_Clr();
 	OLED_SDIN_Clr();
+    OledDelay(1);
 	OLED_SDIN_Set();
 	
 }
@@ -89,6 +93,7 @@ void IIC_Wait_Ack()
 	}
 */
 	OLED_SCLK_Set() ;
+    OledDelay(1);
 	OLED_SCLK_Clr();
 }
 /**********************************************
@@ -111,7 +116,7 @@ void Write_IIC_Byte(unsigned char IIC_Byte)
 		else OLED_SDIN_Clr();
 			da=da<<1;
 		OLED_SCLK_Set();
-		OledDelay(10);
+		OledDelay(1);
 		OLED_SCLK_Clr();
 		}
 
@@ -365,9 +370,9 @@ void OLED_Init(void)
 	GPIO_Init(GPIOC, &GPIO_InitStructure);	  //³õÊ¼»¯GPIOC 5
 	
 	GPIO_ResetBits(GPIOC, GPIO_Pin_5);
-	delay_ms(1);
+	delay_ms(200);
 	GPIO_SetBits(GPIOC, GPIO_Pin_5);
-	
+	delay_ms(500);
 	OLED_WR_Byte(0xAE,OLED_CMD);//--display off
 	OLED_WR_Byte(0x00,OLED_CMD);//---set low column address
 	OLED_WR_Byte(0x10,OLED_CMD);//---set high column address
@@ -402,6 +407,12 @@ void OLED_Init(void)
 	OLED_WR_Byte(0x14,OLED_CMD);//
 	
 	OLED_WR_Byte(0xAF,OLED_CMD);//--turn on oled panel
+    
+    OLED_Display_On();
+    
+    
+    
+    
 }  
 
 

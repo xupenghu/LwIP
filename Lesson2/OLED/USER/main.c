@@ -23,6 +23,8 @@ int main(void)
         LED2 = 1;
         LED3 = 0;
         delay_ms(500);
+        	OLED_Clear();
+	OLED_ShowString(6,3,"0.96' OLED TEST",16);
      }
 }
 
